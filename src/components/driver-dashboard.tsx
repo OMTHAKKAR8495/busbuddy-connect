@@ -21,7 +21,15 @@ import {
 
 type User = { userId: string; role: "driver"; profile: { full_name: string } };
 
-export default function DriverDashboard({ user }: { user: User }) {
+export default function DriverDashboard({
+  user,
+  onOverrideRole,
+  overrideRole,
+}: {
+  user: User;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | null;
+}) {
   const qc = useQueryClient();
   const { data: buses = [] } = useQuery({
     queryKey: ["buses-with-routes"],
@@ -210,7 +218,12 @@ export default function DriverDashboard({ user }: { user: User }) {
   };
 
   return (
-    <AppShell title="Driver Cockpit" role={`Driver · ${user.profile.full_name}`}>
+    <AppShell
+      title="Driver Cockpit"
+      role={`Driver · ${user.profile.full_name}`}
+      onOverrideRole={onOverrideRole}
+      overrideRole={overrideRole}
+    >
       {!activeTrip ? (
         <div className="mx-auto max-w-lg rounded-2xl border border-border/80 bg-card p-8 shadow-xl">
           <div className="flex items-center gap-3 border-b border-border/60 pb-4 mb-6">

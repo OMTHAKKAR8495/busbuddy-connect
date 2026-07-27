@@ -24,7 +24,27 @@ function AppRouter() {
   const u = data as never;
   const activeRole = overrideRole ?? data.role;
 
-  if (activeRole === "admin") return <AdminDashboard user={{ ...u, role: "admin" }} />;
-  if (activeRole === "driver") return <DriverDashboard user={{ ...u, role: "driver" }} />;
-  return <StudentDashboard user={{ ...u, role: "student" }} />;
+  if (activeRole === "admin")
+    return (
+      <AdminDashboard
+        user={{ ...u, role: "admin" }}
+        onOverrideRole={setOverrideRole}
+        overrideRole={overrideRole}
+      />
+    );
+  if (activeRole === "driver")
+    return (
+      <DriverDashboard
+        user={{ ...u, role: "driver" }}
+        onOverrideRole={setOverrideRole}
+        overrideRole={overrideRole}
+      />
+    );
+  return (
+    <StudentDashboard
+      user={{ ...u, role: "student" }}
+      onOverrideRole={setOverrideRole}
+      overrideRole={overrideRole}
+    />
+  );
 }

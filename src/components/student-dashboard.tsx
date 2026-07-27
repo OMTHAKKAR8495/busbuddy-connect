@@ -29,11 +29,24 @@ type User = {
   profile: { full_name: string; roll_number: string | null; photo_url: string | null };
 };
 
-export default function StudentDashboard({ user }: { user: User }) {
+export default function StudentDashboard({
+  user,
+  onOverrideRole,
+  overrideRole,
+}: {
+  user: User;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | null;
+}) {
   const [tab, setTab] = useState<"track" | "pass" | "alerts">("track");
 
   return (
-    <AppShell title="GSFCU Transit" role={`Student · ${user.profile.full_name}`}>
+    <AppShell
+      title="GSFCU Transit"
+      role={`Student · ${user.profile.full_name}`}
+      onOverrideRole={onOverrideRole}
+      overrideRole={overrideRole}
+    >
       <div className="mb-6 flex gap-2 rounded-xl bg-muted p-1.5 border border-border/60">
         {[
           { id: "track", label: "Live Bus Tracking", icon: Navigation },

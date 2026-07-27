@@ -22,11 +22,24 @@ import {
 
 type User = { userId: string; role: "admin"; profile: { full_name: string } };
 
-export default function AdminDashboard({ user }: { user: User }) {
+export default function AdminDashboard({
+  user,
+  onOverrideRole,
+  overrideRole,
+}: {
+  user: User;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | null;
+}) {
   const [tab, setTab] = useState<"fleet" | "passes" | "routes" | "analytics">("fleet");
 
   return (
-    <AppShell title="Transport Admin HQ" role={`Admin · ${user.profile.full_name}`}>
+    <AppShell
+      title="Transport Admin HQ"
+      role={`Admin · ${user.profile.full_name}`}
+      onOverrideRole={onOverrideRole}
+      overrideRole={overrideRole}
+    >
       <div className="mb-6 flex gap-2 rounded-xl bg-muted p-1.5 border border-border/60">
         {[
           { k: "fleet", l: "Fleet Command Map", i: Activity },
