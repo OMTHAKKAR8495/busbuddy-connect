@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSFC University Practical Evaluation Report — Om Thakkar (24BT04171)</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    body { font-family: 'Times New Roman', Times, serif; padding: 30px; color: #111827; line-height: 1.5; font-size: 13px; max-width: 800px; margin: 0 auto; }
+    .header-banner { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px; }
+    .university-logo { font-size: 24px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px; font-family: sans-serif; }
+    .sub-logo { font-size: 11px; text-transform: uppercase; color: #047857; letter-spacing: 2px; font-weight: bold; font-family: sans-serif; }
+    .title-box { background: #f8fafc; border: 1.5px solid #1e3a8a; padding: 12px; text-align: center; margin: 15px 0; border-radius: 4px; font-family: sans-serif; }
+    .title-box h1 { font-size: 18px; color: #1e3a8a; margin: 0; }
+    .title-box h2 { font-size: 13px; color: #475569; margin: 4px 0 0 0; font-weight: normal; }
+    .table-spec { width: 100%; border-collapse: collapse; margin: 12px 0; font-family: sans-serif; }
+    .table-spec th, .table-spec td { border: 1px solid #94a3b8; padding: 8px 10px; font-size: 12px; }
+    .table-spec th { background: #1e3a8a; color: white; text-align: left; }
+    .section-header { background: #1e3a8a; color: white; padding: 6px 12px; font-weight: bold; font-size: 14px; margin-top: 20px; border-radius: 2px; font-family: sans-serif; }
+    .footer-bar { margin-top: 40px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; font-family: sans-serif; }
+    ul { margin: 6px 0; padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .btn-print { background: #059669; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: sans-serif; margin-bottom: 20px; }
+    @media print { .btn-print { display: none; } }
+  </style>
+</head>
+<body>
+
+  <button class="btn-print" onclick="window.print()">🖨️ Click Here to Print / Save as PDF (Cmd + P)</button>
+
+  <div class="header-banner">
+    <div class="university-logo">🌲 GSFC UNIVERSITY</div>
+    <div class="sub-logo">EDUCATION RE-ENVISIONED</div>
+    <div style="font-size: 12px; margin-top: 4px; font-weight: bold; font-family: sans-serif;">Software Engineering Laboratory — GSFC University</div>
+  </div>
+
+  <div class="title-box">
+    <h1>Practical Evaluation Report</h1>
+    <h2>Identifying & Implementing Requirements for Smart Campus Transit System</h2>
+  </div>
+
+  <table class="table-spec">
+    <tr><td><strong>Course:</strong> Software Engineering Laboratory</td><td><strong>Practical No.:</strong> 1</td></tr>
+    <tr><td><strong>Selected Application:</strong> GSFCU Transit (BusBuddy Connect)</td><td><strong>Topic:</strong> Requirement Analysis & Elicitation</td></tr>
+    <tr><td><strong>Student Author:</strong> Om Thakkar (Roll No: 24BT04171)</td><td><strong>Department:</strong> Computer Science & Engineering</td></tr>
+    <tr><td><strong>Live Application URL:</strong> https://busbuddy-connect.vercel.app</td><td><strong>GitHub Repository:</strong> https://github.com/OMTHAKKAR8495/busbuddy-connect.git</td></tr>
+  </table>
+
+  <div class="section-header">(i) Define Requirements</div>
+  <p>A <strong>requirement</strong> is a documented statement of a capability, feature, function, or constraint that a system, product, or service must satisfy in order to solve a real-world problem or to meet the needs and expectations of its stakeholders. Requirements form the foundation of the entire software development life cycle (SDLC).</p>
+  <ul>
+    <li><strong>Functional Requirements (FR):</strong> Define specific behavior, functions, or features of the system (what the system does).</li>
+    <li><strong>Non-Functional Requirements (NFR):</strong> Define quality attributes, performance, security, and operational constraints (how well the system performs its functions).</li>
+  </ul>
+
+  <div class="section-header">(ii) Methods of Gathering Requirements</div>
+  <table class="table-spec">
+    <thead>
+      <tr style="background: #1e3a8a; color: white;">
+        <th style="width: 30%;">Method</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Stakeholder Interviews</strong></td>
+        <td>One-to-one discussions with GSFCU Transport Office admins and student commuters to identify pain points with physical paper/plastic bus passes.</td>
+      </tr>
+      <tr>
+        <td><strong>2. Observation</strong></td>
+        <td>Watching gate conductors manually verify student passes at campus entry gates to calculate queue delay times.</td>
+      </tr>
+      <tr>
+        <td><strong>3. Prototyping</strong></td>
+        <td>Building interactive React mock-ups of the digital pass and live Leaflet bus tracking radar to refine requirements.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-header">(iii) Functional & Non-Functional Requirements</div>
+
+  <h3 style="font-family: sans-serif; font-size: 12px; color: #1e3a8a; margin-top: 15px;">A. Functional Requirements (FR)</h3>
+  <table class="table-spec">
+    <thead>
+      <tr style="background: #1e3a8a; color: white;">
+        <th style="width: 12%;">ID</th>
+        <th>Requirement Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="text-align: center;"><strong>FR-1</strong></td><td>The system shall allow users to log in with role-based access control (Student, Driver, Admin).</td></tr>
+      <tr><td style="text-align: center;"><strong>FR-2</strong></td><td>The system shall display 13 official GSFC University routes with real-time Leaflet map bus markers.</td></tr>
+      <tr><td style="text-align: center;"><strong>FR-3</strong></td><td>The system shall generate an anti-fraud dynamic digital pass with a 15-second rotating QR token, student photo, and Roll Number 24BT04171.</td></tr>
+      <tr><td style="text-align: center;"><strong>FR-4</strong></td><td>The system shall provide drivers with a shift cockpit to broadcast real-time smartphone GPS coordinates.</td></tr>
+      <tr><td style="text-align: center;"><strong>FR-5</strong></td><td>The system shall provide gate conductors with a <code>jsQR</code> realtime camera scanner to verify student identity.</td></tr>
+      <tr><td style="text-align: center;"><strong>FR-6</strong></td><td>The system shall provide an Admin HQ panel for pass approvals, fee verification, and emergency SOS alerts.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-family: sans-serif; font-size: 12px; color: #1e3a8a; margin-top: 15px;">B. Non-Functional Requirements (NFR)</h3>
+  <table class="table-spec">
+    <thead>
+      <tr style="background: #1e3a8a; color: white;">
+        <th style="width: 12%;">ID</th>
+        <th style="width: 25%;">Category</th>
+        <th>Requirement Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="text-align: center;"><strong>NFR-1</strong></td><td>Performance</td><td>The bus tracking radar page shall render within 1.5 seconds under normal load.</td></tr>
+      <tr><td style="text-align: center;"><strong>NFR-2</strong></td><td>Security</td><td>Dynamic pass QR tokens shall expire every 15 seconds to eliminate screenshot pass sharing.</td></tr>
+      <tr><td style="text-align: center;"><strong>NFR-3</strong></td><td>Usability</td><td>The mobile interface shall feature a touch bottom bar suitable for 375px–430px smartphone viewports.</td></tr>
+      <tr><td style="text-align: center;"><strong>NFR-4</strong></td><td>Availability</td><td>The application shall maintain 99.9% uptime on Vercel Global Edge CDN.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-header">(iv) Project Execution Timeline & Commercial Budget Analysis</div>
+  <table class="table-spec">
+    <thead>
+      <tr style="background: #1e3a8a; color: white;">
+        <th style="width: 20%;">Phase</th>
+        <th>Execution Scope</th>
+        <th style="width: 30%;">Commercial Estimate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Week 1</strong></td><td>Requirement Gathering, 13 Routes Seeding & PostgreSQL Schemas</td><td>₹25,000 ($300 USD)</td></tr>
+      <tr><td><strong>Week 2</strong></td><td>Realtime Leaflet Map Radar & Driver Telemetry GPS Broadcast</td><td>₹75,000 ($900 USD)</td></tr>
+      <tr><td><strong>Week 3</strong></td><td>15s Rotating TOTP Digital Pass, Student Photo Avatar & Admin HQ Queue</td><td>₹50,000 ($600 USD)</td></tr>
+      <tr><td><strong>Week 4</strong></td><td><code>jsQR</code> Phone Camera Scanner, Mobile UI & Vercel Cloud Deployment</td><td>₹50,000 ($600 USD)</td></tr>
+      <tr style="background: #f1f5f9; font-weight: bold;"><td colSpan="2" style="text-align: right;">Total Commercial Build Valuation:</td><td style="color: #059669;">₹2,00,000 ($2,400 USD)</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size: 11px; color: #64748b; font-family: sans-serif; margin-top: 4px;">
+    *Monthly Cloud Infrastructure Cost: <strong>₹0 / Month</strong> (Vercel + Supabase + MongoDB Free Tiers). Hardware savings of ₹1,50,000 achieved by using Driver Smartphone Telemetry instead of external GPS trackers.
+  </p>
+
+  <div class="footer-bar">
+    <div>
+      <div style="font-weight: bold;">Software Engineering Laboratory</div>
+      <div>GSFC University, Vadodara</div>
+    </div>
+    <div style="text-align: right;">
+      <div style="border-bottom: 1px solid #111827; padding-bottom: 2px; font-weight: bold;">Om Thakkar (24BT04171)</div>
+      <div style="margin-top: 2px;">Student Author Signature</div>
+    </div>
+  </div>
+
+</body>
+</html>

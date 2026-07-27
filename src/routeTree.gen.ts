@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ReportRouteImport } from './routes/report'
 import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 
@@ -30,11 +29,6 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReportRoute = ReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ScannerRoute = ScannerRouteImport.update({
   id: '/scanner',
   path: '/scanner',
@@ -49,14 +43,12 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/report': typeof ReportRoute
   '/scanner': typeof ScannerRoute
   '/app': typeof AuthenticatedAppRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/report': typeof ReportRoute
   '/scanner': typeof ScannerRoute
   '/app': typeof AuthenticatedAppRoute
 }
@@ -65,21 +57,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/report': typeof ReportRoute
   '/scanner': typeof ScannerRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/report' | '/scanner' | '/app'
+  fullPaths: '/' | '/auth' | '/scanner' | '/app'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/report' | '/scanner' | '/app'
+  to: '/' | '/auth' | '/scanner' | '/app'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/report'
     | '/scanner'
     | '/_authenticated/app'
   fileRoutesById: FileRoutesById
@@ -88,7 +78,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ReportRoute: typeof ReportRoute
   ScannerRoute: typeof ScannerRoute
 }
 
@@ -113,13 +102,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/report': {
-      id: '/report'
-      path: '/report'
-      fullPath: '/report'
-      preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scanner': {
@@ -154,7 +136,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ReportRoute: ReportRoute,
   ScannerRoute: ScannerRoute,
 }
 export const routeTree = rootRouteImport

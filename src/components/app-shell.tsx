@@ -171,14 +171,6 @@ export default function AppShell({
               <span>{mobileSimulated ? "Exit Mobile Mode" : "📱 Mobile View"}</span>
             </button>
 
-            {/* Print Official GSFC University Report PDF */}
-            <button
-              onClick={handlePrintPDFReport}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-700 transition"
-            >
-              <Printer className="h-3.5 w-3.5" /> Print GSFCU Report (PDF)
-            </button>
-
             <div className="hidden sm:flex items-center gap-1.5">
               <span className="text-muted-foreground text-[11px] font-mono mr-0.5">Role:</span>
               {allowedTabs.map((tab) => (
