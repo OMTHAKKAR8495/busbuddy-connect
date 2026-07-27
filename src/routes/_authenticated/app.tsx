@@ -12,7 +12,8 @@ function AppRouter() {
   const { data, isLoading } = useMyRole();
   if (isLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   if (!data) return <Navigate to="/auth" />;
-  if (data.role === "admin") return <AdminDashboard user={data} />;
-  if (data.role === "driver") return <DriverDashboard user={data} />;
-  return <StudentDashboard user={data} />;
+  const u = data as never;
+  if (data.role === "admin") return <AdminDashboard user={u} />;
+  if (data.role === "driver") return <DriverDashboard user={u} />;
+  return <StudentDashboard user={u} />;
 }
