@@ -81,6 +81,7 @@ Requirements are broadly classified into:
 ### (v) Project Timeline, Execution Period & Cost Breakdown
 
 #### A. Development Period (4-Week Sprint Schedule)
+- **Total Development Time**: **4 Weeks (1 Month)**
 - **Week 1 (Requirements & Route Seeding)**: Analysis of GSFC University bus routes (Routes R1 to R13), database schema design (PostgreSQL/MongoDB tables for buses, passes, profiles, stops, and alerts).
 - **Week 2 (Realtime Radar & Telemetry)**: Building Leaflet map engine, driver shift control cockpit, and live location broadcast stream.
 - **Week 3 (Digital Pass & Admin HQ)**: Developing student digital pass with 15s TOTP rotating QR code, student photo avatar, print modal, and Admin approval queue.
@@ -95,9 +96,14 @@ Requirements are broadly classified into:
 | **Backend & Security** | Supabase PostgreSQL, Row Level Security (RLS), MongoDB | ₹50,000 | $600 USD |
 | **QR Scanner Engine** | `jsQR` phone camera frame decoding loop, TOTP anti-fraud token engine | ₹30,000 | $360 USD |
 | **QA & Cloud CI/CD** | Mobile viewport testing (375px–430px), Vercel cloud deployment | ₹20,000 | $240 USD |
-| **Total Commercial Build Value** | **Complete Production Campus Transit System** | **₹2,00,000** | **$2,400 USD** |
+| **TOTAL COMMERCIAL BUILD VALUE** | **Complete Production Campus Transit System** | **₹2,00,000 INR** | **$2,400 USD** |
 
-*Note: Infrastructure Cost is **₹0/month** by leveraging Vercel, Supabase, and MongoDB free tiers, saving **₹1,50,000** upfront hardware tracker costs by using driver smartphone GPS.*
+#### C. Operational Cloud Infrastructure & Hardware Savings
+- **Vercel Web Hosting**: **₹0 / Month** (Free Hobby CDN Tier)
+- **Supabase PostgreSQL & Realtime**: **₹0 / Month** (Free Tier)
+- **MongoDB Atlas Cluster**: **₹0 / Month** (Free Tier)
+- **TOTAL MONTHLY OPERATIONAL COST**: **₹0 / Month**
+- **HARDWARE COST SAVINGS**: **Saved ₹1,50,000 INR upfront** by utilizing Driver Smartphone GPS Telemetry instead of purchasing expensive external hardware tracker units for 13 buses!
 
 ---
 
@@ -106,4 +112,5 @@ Requirements are broadly classified into:
 Through this project, requirements for the **GSFCU Transit System** were identified and classified into functional and non-functional categories. The system successfully replaces legacy static transit methods with a secure, real-time, anti-fraud campus mobility platform engineered for GSFC University.
 
 **Software Engineering Laboratory — GSFC University**  
+**Author**: Om Thakkar (Roll No: 24BT04171)  
 **Page 1**
