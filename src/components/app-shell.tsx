@@ -45,12 +45,13 @@ export default function AppShell({
               { id: "student", label: "Student", emoji: "🎓" },
               { id: "driver", label: "Driver", emoji: "🚌" },
               { id: "admin", label: "Admin HQ", emoji: "🛡️" },
+              { id: "scanner", label: "QR Scanner", emoji: "🔍" },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => onOverrideRole?.(overrideRole === tab.id ? null : (tab.id as never))}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                  (overrideRole ?? role.toLowerCase()) === tab.id
+                  (overrideRole ?? role.toLowerCase()).includes(tab.id)
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
                 }`}

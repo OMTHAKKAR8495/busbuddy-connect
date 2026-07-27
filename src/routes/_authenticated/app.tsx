@@ -4,6 +4,7 @@ import { useMyRole } from "@/hooks/use-role";
 import StudentDashboard from "@/components/student-dashboard";
 import DriverDashboard from "@/components/driver-dashboard";
 import AdminDashboard from "@/components/admin-dashboard";
+import ConductorScannerPage from "@/components/conductor-scanner";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppRouter,
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function AppRouter() {
   const { data, isLoading } = useMyRole();
-  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "admin" | null>(null);
+  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "admin" | "scanner" | null>(null);
 
   if (isLoading)
     return (
@@ -24,27 +25,35 @@ function AppRouter() {
   const u = data as never;
   const activeRole = overrideRole ?? data.role;
 
+  if (activeRole === "scanner" as never)
+    return (
+      <ConductorScannerPage
+        onOverrideRole={setOverrideRole as never}
+        overrideRole={overrideRole as never}
+      />
+    );
+
   if (activeRole === "admin")
     return (
       <AdminDashboard
         user={{ ...u, role: "admin" }}
-        onOverrideRole={setOverrideRole}
-        overrideRole={overrideRole}
+        onOverrideRole={setOverrideRole as never}
+        overrideRole={overrideRole as never}
       />
     );
   if (activeRole === "driver")
     return (
       <DriverDashboard
         user={{ ...u, role: "driver" }}
-        onOverrideRole={setOverrideRole}
-        overrideRole={overrideRole}
+        onOverrideRole={setOverrideRole as never}
+        overrideRole={overrideRole as never}
       />
     );
   return (
     <StudentDashboard
       user={{ ...u, role: "student" }}
-      onOverrideRole={setOverrideRole}
-      overrideRole={overrideRole}
+      onOverrideRole={setOverrideRole as never}
+      overrideRole={overrideRole as never}
     />
   );
 }
