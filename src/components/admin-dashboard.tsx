@@ -87,10 +87,17 @@ function PassesTab() {
   const qc = useQueryClient();
   const { data: passes = [] } = useQuery({
     queryKey: ["admin-passes"],
-    queryFn: async () => (await supabase.from("bus_passes").select("*, profiles!bus_passes_student_id_fkey(full_name,roll_number), routes(route_number,name)").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data: rows } = await supabase.from("bus_passes").select("*, routes(route_number,name)").order("created_at", { ascending: false });
+      if (!rows?.length) return [] as ((typeof rows extends (infer R)[] ? R : never) & { profiles: { full_name: string; roll_number: string | null } | null })[];
+      const ids = Array.from(new Set(rows.map((r) => r.student_id)));
+      const { data: profs } = await supabase.from("profiles").select("id, full_name, roll_number").in("id", ids);
+      const map = new Map((profs ?? []).map((p) => [p.id, p]));
+      return rows.map((r) => ({ ...r, profiles: map.get(r.student_id) ?? null }));
+    },
   });
 
-  async function update(id: string, patch: Record<string, unknown>) {
+  async function update(id: string, patch: { status?: "active" | "pending" | "expired" | "rejected"; fee_paid?: boolean }) {
     const { error } = await supabase.from("bus_passes").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
