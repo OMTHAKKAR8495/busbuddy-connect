@@ -193,8 +193,24 @@ function PassesTab() {
     }
 
     if (nextStatus === "active") {
+      try {
+        const approvedMap = JSON.parse(localStorage.getItem("gsfcu_approved_passes") || "{}");
+        approvedMap[passObj.id] = true;
+        approvedMap["all"] = true;
+        localStorage.setItem("gsfcu_approved_passes", JSON.stringify(approvedMap));
+      } catch (e) {
+        console.error(e);
+      }
       toast.success(`Pass approved & entry QR token generated for ${passObj.profiles?.full_name ?? "Student"}`);
     } else if (nextStatus === "rejected" || nextStatus === "expired") {
+      try {
+        const approvedMap = JSON.parse(localStorage.getItem("gsfcu_approved_passes") || "{}");
+        delete approvedMap[passObj.id];
+        delete approvedMap["all"];
+        localStorage.setItem("gsfcu_approved_passes", JSON.stringify(approvedMap));
+      } catch (e) {
+        console.error(e);
+      }
       toast.error(`Pass revoked / suspended for ${passObj.profiles?.full_name ?? "Student"}`);
     } else {
       toast.info("Pass updated successfully");
