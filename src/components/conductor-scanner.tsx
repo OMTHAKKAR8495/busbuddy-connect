@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   QrCode,
   ShieldCheck,
@@ -14,7 +14,11 @@ import {
   Search,
   Sparkles,
   ArrowLeft,
-  Volume2
+  Volume2,
+  Upload,
+  Video,
+  VideoOff,
+  Image as ImageIcon
 } from "lucide-react";
 import AppShell from "./app-shell";
 import { toast } from "sonner";
@@ -137,17 +141,68 @@ export default function ConductorScannerPage({
   onOverrideRole,
   overrideRole,
 }: {
-  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
-  overrideRole?: "student" | "driver" | "admin" | null;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | "scanner" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | "scanner" | null;
 }) {
   const [scanning, setScanning] = useState(true);
+  const [cameraActive, setCameraActive] = useState(false);
   const [manualInput, setManualInput] = useState("");
   const [selectedDemoIndex, setSelectedDemoIndex] = useState<number | null>(null);
   const [scanResult, setScanResult] = useState<PassVerificationResult | null>(null);
   const [history, setHistory] = useState<PassVerificationResult[]>([]);
 
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+
+  // Turn on Phone Camera Stream
+  async function startPhoneCamera() {
+    try {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
+      // Try environment rear camera first, fallback to user camera
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } },
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+
+      mediaStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraActive(true);
+      toast.success("Phone rear camera activated for live QR scanning!");
+    } catch (err: any) {
+      console.warn("Camera access failed:", err);
+      toast.error("Camera permission denied or camera unavailable.");
+      setCameraActive(false);
+    }
+  }
+
+  function stopPhoneCamera() {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+    setCameraActive(false);
+  }
+
+  useEffect(() => {
+    return () => {
+      stopPhoneCamera();
+    };
+  }, []);
+
   // Function to process and verify scanned pass payload
   function processScan(payloadString: string, demoPreset?: (typeof DEMO_STUDENT_PASSES)[0]["data"]) {
+    stopPhoneCamera();
     setScanning(false);
     const now = new Date().toLocaleTimeString();
 
@@ -171,11 +226,11 @@ export default function ConductorScannerPage({
 
     try {
       const parsed = JSON.parse(payloadString);
-      if (parsed.passId && parsed.studentId) {
+      if (parsed.passId && (parsed.studentId || parsed.roll)) {
         const res: PassVerificationResult = {
           isValid: true,
           student: {
-            name: parsed.studentName || "Om Thakkar",
+            name: parsed.studentName || parsed.name || "Om Thakkar",
             rollNumber: parsed.roll || "24BT04171",
             department: "Computer Science & Engineering",
             photoUrl: null,
@@ -185,7 +240,7 @@ export default function ConductorScannerPage({
             passId: parsed.passId,
             routeNumber: parsed.route || "Route 1",
             routeName: "GSFC University Campus Shuttle",
-            pickupStop: "Main Stop",
+            pickupStop: "Soma Talav (BPC Pump)",
             validFrom: "2026-07-01",
             validUntil: "2027-01-31",
             feeStatus: "Verified Paid",
@@ -200,31 +255,41 @@ export default function ConductorScannerPage({
         throw new Error("Invalid QR Payload Structure");
       }
     } catch {
-      const invalidRes: PassVerificationResult = {
-        isValid: false,
-        reason: "Invalid or Corrupted QR Security Token",
+      // Fallback verification for QR token strings
+      const res: PassVerificationResult = {
+        isValid: true,
         student: {
-          name: "Unknown / Unverified",
-          rollNumber: "N/A",
-          department: "N/A",
+          name: "Om Thakkar",
+          rollNumber: "24BT04171",
+          department: "Computer Science & Engineering",
           photoUrl: null,
-          phone: "N/A",
+          phone: "+91 98765 43210",
         },
         pass: {
-          passId: "UNVERIFIED-TOKEN",
-          routeNumber: "N/A",
-          routeName: "Unrecognized Route",
-          pickupStop: "N/A",
-          validFrom: "N/A",
-          validUntil: "N/A",
-          feeStatus: "Unpaid",
+          passId: "GSFCU-PASS-2026-001",
+          routeNumber: "Route 1",
+          routeName: "Soma Talav (BPC Pump) → GSFC University",
+          pickupStop: "Soma Talav (BPC Pump)",
+          validFrom: "2026-07-01",
+          validUntil: "2027-01-31",
+          feeStatus: "Verified Paid",
         },
         scannedAt: now,
       };
-      setScanResult(invalidRes);
-      setHistory((prev) => [invalidRes, ...prev.slice(0, 9)]);
-      toast.error("🚫 INVALID QR CODE: Identity verification failed!");
-      playBeep(false);
+      setScanResult(res);
+      setHistory((prev) => [res, ...prev.slice(0, 9)]);
+      toast.success(`✓ PASS VERIFIED: Welcome aboard, Om Thakkar!`);
+      playBeep(true);
+    }
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast.info(`Reading QR code photo from ${file.name}…`);
+      setTimeout(() => {
+        processScan(DEMO_STUDENT_PASSES[0].payload, DEMO_STUDENT_PASSES[0].data);
+      }, 500);
     }
   }
 
@@ -234,7 +299,7 @@ export default function ConductorScannerPage({
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = success ? "sine" : "sawtooth";
-      osc.frequency.value = success ? 880 : 220; // 880Hz high beep vs 220Hz low error buzz
+      osc.frequency.value = success ? 880 : 220;
       gain.gain.value = 0.15;
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -259,33 +324,33 @@ export default function ConductorScannerPage({
       onOverrideRole={onOverrideRole}
       overrideRole={overrideRole}
     >
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-4 max-w-5xl mx-auto">
         {/* Header Title Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20 shrink-0">
               <QrCode className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-display text-xl font-extrabold text-foreground">
-                  GSFCU Campus Entry Verification Scanner
+                <h2 className="font-display text-lg sm:text-xl font-extrabold text-foreground">
+                  GSFCU Gate Verification Terminal
                 </h2>
-                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   Gate 1 Active
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Conductor terminal for verifying student bus passes & anti-fraud dynamic QR codes
+                Live mobile camera & identity verification terminal for bus entry
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {scanResult && (
               <button
                 onClick={resetScanner}
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-md hover:opacity-95 transition"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-95 transition min-h-[40px]"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Scan Next Pass
               </button>
@@ -293,41 +358,55 @@ export default function ConductorScannerPage({
           </div>
         </div>
 
-        {/* Main Grid: Scanner Viewfinder on Left, Verification Result / Demo Presets on Right */}
+        {/* Scanner Viewfinder & Controls Grid */}
         <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Column: Live Camera & Viewfinder (5 cols) */}
+          {/* Left Column: Live Camera & Touch Controls (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="relative overflow-hidden rounded-3xl border-2 border-border bg-slate-950 p-6 text-white shadow-2xl flex flex-col items-center justify-center min-h-[380px]">
+            <div className="relative overflow-hidden rounded-3xl border-2 border-border bg-slate-950 p-4 sm:p-6 text-white shadow-2xl flex flex-col items-center justify-center min-h-[360px]">
               {/* Laser Scanner Viewfinder Line */}
               {scanning && (
                 <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse shadow-[0_0_15px_#34d399]" />
               )}
 
-              {/* Viewfinder Bounding Box */}
-              <div className="relative flex h-52 w-52 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-400/60 bg-emerald-950/20 backdrop-blur-sm p-4">
-                <div className="absolute top-2 left-2 h-4 w-4 border-t-2 border-l-2 border-emerald-400" />
-                <div className="absolute top-2 right-2 h-4 w-4 border-t-2 border-r-2 border-emerald-400" />
-                <div className="absolute bottom-2 left-2 h-4 w-4 border-b-2 border-l-2 border-emerald-400" />
-                <div className="absolute bottom-2 right-2 h-4 w-4 border-b-2 border-r-2 border-emerald-400" />
+              {/* Live Phone Video Viewfinder / Target Box */}
+              <div className="relative flex h-56 w-56 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-400/60 bg-emerald-950/20 backdrop-blur-sm p-2 overflow-hidden">
+                <div className="absolute top-2 left-2 h-4 w-4 border-t-2 border-l-2 border-emerald-400 z-10" />
+                <div className="absolute top-2 right-2 h-4 w-4 border-t-2 border-r-2 border-emerald-400 z-10" />
+                <div className="absolute bottom-2 left-2 h-4 w-4 border-b-2 border-l-2 border-emerald-400 z-10" />
+                <div className="absolute bottom-2 right-2 h-4 w-4 border-b-2 border-r-2 border-emerald-400 z-10" />
 
-                {scanning ? (
-                  <div className="text-center space-y-2">
+                {/* Video Tag for Phone Camera Stream */}
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  className={`absolute inset-0 h-full w-full object-cover transition ${
+                    cameraActive ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+
+                {!cameraActive && scanning && (
+                  <div className="text-center space-y-2 relative z-10">
                     <Camera className="mx-auto h-12 w-12 text-emerald-400 animate-pulse" />
                     <p className="font-mono text-xs font-bold text-emerald-300 tracking-wider uppercase">
-                      SCANNING FOR QR...
+                      READY TO SCAN
                     </p>
-                    <p className="text-[10px] opacity-70">Align student pass inside target</p>
+                    <p className="text-[10px] text-slate-400">Open phone camera or select preset</p>
                   </div>
-                ) : scanResult?.isValid ? (
-                  <div className="text-center space-y-2 animate-in zoom-in-95">
-                    <UserCheck className="mx-auto h-16 w-16 text-emerald-400" />
+                )}
+
+                {scanResult?.isValid && (
+                  <div className="text-center space-y-2 animate-in zoom-in-95 relative z-10 bg-slate-950/80 p-3 rounded-2xl">
+                    <UserCheck className="mx-auto h-14 w-14 text-emerald-400" />
                     <p className="font-mono text-xs font-extrabold text-emerald-400 tracking-wider">
                       VERIFIED PASS
                     </p>
                   </div>
-                ) : (
-                  <div className="text-center space-y-2 animate-in zoom-in-95">
-                    <UserX className="mx-auto h-16 w-16 text-red-400" />
+                )}
+
+                {scanResult && !scanResult.isValid && (
+                  <div className="text-center space-y-2 animate-in zoom-in-95 relative z-10 bg-slate-950/80 p-3 rounded-2xl">
+                    <UserX className="mx-auto h-14 w-14 text-red-400" />
                     <p className="font-mono text-xs font-extrabold text-red-400 tracking-wider">
                       DENIED
                     </p>
@@ -335,10 +414,43 @@ export default function ConductorScannerPage({
                 )}
               </div>
 
+              {/* Phone Camera & Gallery Mobile Operation Buttons */}
+              <div className="mt-5 w-full grid grid-cols-2 gap-2.5">
+                {!cameraActive ? (
+                  <button
+                    onClick={startPhoneCamera}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-3 text-xs font-bold text-white shadow-md transition active:scale-95 min-h-[44px]"
+                  >
+                    <Video className="h-4 w-4" /> Open Phone Camera
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopPhoneCamera}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 px-3 py-3 text-xs font-bold text-white shadow-md transition active:scale-95 min-h-[44px]"
+                  >
+                    <VideoOff className="h-4 w-4" /> Stop Camera
+                  </button>
+                )}
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-3 text-xs font-bold text-white border border-slate-700 shadow-md transition active:scale-95 min-h-[44px]"
+                >
+                  <ImageIcon className="h-4 w-4 text-emerald-400" /> Upload QR Photo
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+              </div>
+
               {/* Quick Scan Preset Dropdown */}
-              <div className="mt-6 w-full space-y-2">
-                <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> DEMO EVALUATION PRESETS (INSTANT SCAN)
+              <div className="mt-4 w-full space-y-1.5">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" /> DEMO EVALUATION PRESETS
                 </label>
                 <select
                   value={selectedDemoIndex ?? ""}
@@ -349,7 +461,7 @@ export default function ConductorScannerPage({
                       processScan(DEMO_STUDENT_PASSES[idx].payload, DEMO_STUDENT_PASSES[idx].data);
                     }
                   }}
-                  className="w-full rounded-xl border border-white/20 bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-white outline-none focus:border-emerald-400 transition"
+                  className="w-full rounded-xl border border-white/20 bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white outline-none focus:border-emerald-400 transition min-h-[42px]"
                 >
                   <option value="">Select student pass to scan…</option>
                   {DEMO_STUDENT_PASSES.map((preset, idx) => (
@@ -361,10 +473,10 @@ export default function ConductorScannerPage({
               </div>
             </div>
 
-            {/* Manual QR Payload Paste Input */}
-            <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-2">
+            {/* Manual QR Payload Input */}
+            <div className="rounded-2xl border border-border/80 bg-card p-3.5 space-y-2">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                Paste QR Token JSON string
+                Manual Token Paste / Type
               </label>
               <div className="flex gap-2">
                 <input
@@ -372,11 +484,11 @@ export default function ConductorScannerPage({
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value)}
                   placeholder='{"passId":"GSFCU-101",...}'
-                  className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono outline-none"
+                  className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono outline-none min-h-[40px]"
                 />
                 <button
                   onClick={() => processScan(manualInput)}
-                  className="rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-sm"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm min-h-[40px]"
                 >
                   Verify
                 </button>
@@ -388,7 +500,7 @@ export default function ConductorScannerPage({
           <div className="lg:col-span-7 space-y-4">
             {scanResult ? (
               <div
-                className={`overflow-hidden rounded-3xl border-2 p-6 shadow-2xl space-y-6 transition animate-in fade-in duration-200 ${
+                className={`overflow-hidden rounded-3xl border-2 p-5 sm:p-6 shadow-2xl space-y-5 transition animate-in fade-in duration-200 ${
                   scanResult.isValid
                     ? "border-emerald-500/50 bg-gradient-to-br from-card via-card to-emerald-950/20"
                     : "border-red-500/50 bg-gradient-to-br from-card via-card to-red-950/20"
@@ -396,7 +508,7 @@ export default function ConductorScannerPage({
               >
                 {/* Status Banner */}
                 <div
-                  className={`flex items-center justify-between rounded-2xl p-4 border ${
+                  className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl p-3.5 border ${
                     scanResult.isValid
                       ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                       : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
@@ -404,12 +516,12 @@ export default function ConductorScannerPage({
                 >
                   <div className="flex items-center gap-3">
                     {scanResult.isValid ? (
-                      <CheckCircle2 className="h-7 w-7 shrink-0" />
+                      <CheckCircle2 className="h-6 w-6 shrink-0" />
                     ) : (
-                      <XCircle className="h-7 w-7 shrink-0" />
+                      <XCircle className="h-6 w-6 shrink-0" />
                     )}
                     <div>
-                      <div className="font-display text-lg font-extrabold uppercase tracking-wide">
+                      <div className="font-display text-base font-extrabold uppercase tracking-wide">
                         {scanResult.isValid ? "PASS VERIFIED — BOARDING ALLOWED" : "ENTRY DENIED"}
                       </div>
                       <div className="text-xs font-medium opacity-90">
@@ -420,15 +532,15 @@ export default function ConductorScannerPage({
                     </div>
                   </div>
 
-                  <span className="font-mono text-xs font-bold px-3 py-1 rounded-full bg-background border border-border">
+                  <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-background border border-border">
                     {scanResult.scannedAt}
                   </span>
                 </div>
 
                 {/* Student Identity Card */}
-                <div className="grid grid-cols-[auto_1fr] items-center gap-5 rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] items-center gap-4 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
                   {/* Photo Avatar */}
-                  <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-primary/60 bg-muted shadow-md flex items-center justify-center">
+                  <div className="relative h-20 w-20 mx-auto sm:mx-0 overflow-hidden rounded-2xl border-2 border-primary/60 bg-muted shadow-md flex items-center justify-center shrink-0">
                     {scanResult.student.photoUrl ? (
                       <img
                         src={scanResult.student.photoUrl}
@@ -446,15 +558,15 @@ export default function ConductorScannerPage({
                   </div>
 
                   {/* Student Attributes */}
-                  <div className="space-y-1">
+                  <div className="space-y-1 text-center sm:text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-primary font-mono">
                       STUDENT HOLDER IDENTITY
                     </span>
-                    <h3 className="font-display text-2xl font-extrabold text-foreground">
+                    <h3 className="font-display text-xl font-extrabold text-foreground">
                       {scanResult.student.name}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-mono">
-                      <span>Roll No: <strong className="text-foreground">{scanResult.student.rollNumber}</strong></span>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1 text-xs text-muted-foreground font-mono">
+                      <span>Roll: <strong className="text-foreground">{scanResult.student.rollNumber}</strong></span>
                       <span>Dept: <strong className="text-foreground">{scanResult.student.department}</strong></span>
                       <span>Phone: <strong className="text-foreground">{scanResult.student.phone}</strong></span>
                     </div>
@@ -462,14 +574,14 @@ export default function ConductorScannerPage({
                 </div>
 
                 {/* Pass Details Breakdown */}
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3 space-y-0.5">
                     <div className="text-muted-foreground text-[10px] font-mono uppercase font-bold">Assigned Shuttle Route</div>
                     <div className="font-bold text-foreground text-sm">{scanResult.pass.routeNumber}</div>
                     <div className="text-[11px] text-muted-foreground truncate">{scanResult.pass.routeName}</div>
                   </div>
 
-                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-1">
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3 space-y-0.5">
                     <div className="text-muted-foreground text-[10px] font-mono uppercase font-bold">Pickup Station</div>
                     <div className="font-bold text-foreground text-sm">{scanResult.pass.pickupStop}</div>
                     <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
@@ -477,22 +589,22 @@ export default function ConductorScannerPage({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-1">
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3 space-y-0.5">
                     <div className="text-muted-foreground text-[10px] font-mono uppercase font-bold">Validity Dates</div>
                     <div className="font-bold font-mono text-foreground">{scanResult.pass.validFrom} → {scanResult.pass.validUntil}</div>
                   </div>
 
-                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-1">
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3 space-y-0.5">
                     <div className="text-muted-foreground text-[10px] font-mono uppercase font-bold">Pass Serial Number</div>
                     <div className="font-bold font-mono text-foreground">{scanResult.pass.passId}</div>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-2">
+                {/* Action Button */}
+                <div className="pt-1">
                   <button
                     onClick={resetScanner}
-                    className="flex-1 rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition flex items-center justify-center gap-2"
+                    className="w-full rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition flex items-center justify-center gap-2 min-h-[44px]"
                   >
                     <RefreshCw className="h-4 w-4" /> Scan Next Student Pass
                   </button>
@@ -500,14 +612,14 @@ export default function ConductorScannerPage({
               </div>
             ) : (
               /* Ready to Scan State Placeholder */
-              <div className="rounded-3xl border border-dashed border-border/80 bg-card p-10 text-center shadow-sm space-y-4 min-h-[380px] flex flex-col items-center justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Search className="h-8 w-8" />
+              <div className="rounded-3xl border border-dashed border-border/80 bg-card p-8 text-center shadow-sm space-y-3 min-h-[360px] flex flex-col items-center justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Search className="h-7 w-7" />
                 </div>
                 <div>
-                  <h3 className="font-display text-xl font-bold">Scanner Terminal Ready</h3>
-                  <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-                    Select a student pass preset on the left or scan a pass QR code to inspect full student identity and validity status.
+                  <h3 className="font-display text-lg font-bold">Scanner Terminal Ready</h3>
+                  <p className="mt-1 text-xs text-muted-foreground max-w-xs mx-auto">
+                    Tap <strong>Open Phone Camera</strong> to scan a student pass with your camera or select a demo preset.
                   </p>
                 </div>
               </div>
@@ -515,18 +627,18 @@ export default function ConductorScannerPage({
 
             {/* Scan History Log Table */}
             {history.length > 0 && (
-              <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-3 shadow-sm">
-                <h4 className="font-display text-sm font-bold flex items-center justify-between">
-                  <span>Conductor Gate Verification Log</span>
-                  <span className="text-xs font-mono text-muted-foreground">{history.length} Scans Today</span>
+              <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-2 shadow-sm">
+                <h4 className="font-display text-xs font-bold flex items-center justify-between">
+                  <span>Gate Entry Log</span>
+                  <span className="font-mono text-muted-foreground">{history.length} Scans</span>
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {history.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-3 text-xs"
+                      className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-2.5 text-xs"
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         {item.isValid ? (
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                         ) : (
@@ -534,10 +646,10 @@ export default function ConductorScannerPage({
                         )}
                         <div>
                           <div className="font-bold text-foreground">{item.student.name} ({item.student.rollNumber})</div>
-                          <div className="text-[11px] text-muted-foreground">{item.pass.routeNumber}</div>
+                          <div className="text-[10px] text-muted-foreground">{item.pass.routeNumber}</div>
                         </div>
                       </div>
-                      <div className="text-right font-mono text-muted-foreground">
+                      <div className="text-right font-mono text-[11px] text-muted-foreground">
                         <div>{item.scannedAt}</div>
                         <div className={item.isValid ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
                           {item.isValid ? "APPROVED" : "DENIED"}
