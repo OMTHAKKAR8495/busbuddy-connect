@@ -11,10 +11,14 @@ function prepareVercelDist() {
   }
 
   const files = fs.readdirSync(assetsDir);
-  const jsFile = files.find((f) => f.startsWith("index-") && f.endsWith(".js"));
-  const cssFile = files.find((f) => f.startsWith("styles-") && f.endsWith(".css")) || files.find((f) => f.endsWith(".css"));
+  const jsFiles = files.filter((f) => f.endsWith(".js"));
+  const cssFiles = files.filter((f) => f.endsWith(".css"));
 
-  console.log(`[Postbuild] Found JS bundle: ${jsFile}, CSS bundle: ${cssFile}`);
+  console.log(`[Postbuild] Found ${jsFiles.length} JS files, ${cssFiles.length} CSS files`);
+
+  // Build link and script tags for static HTML shell
+  const cssTags = cssFiles.map((c) => `<link rel="stylesheet" href="/assets/${c}" />`).join("\n    ");
+  const jsTags = jsFiles.map((j) => `<script type="module" src="/assets/${j}"></script>`).join("\n    ");
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -22,11 +26,11 @@ function prepareVercelDist() {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GSFCU Transit — Smart Campus Mobility Console</title>
-    ${cssFile ? `<link rel="stylesheet" href="/assets/${cssFile}" />` : ""}
+    ${cssTags}
   </head>
   <body class="bg-background text-foreground min-h-screen">
     <div id="root"></div>
-    ${jsFile ? `<script type="module" src="/assets/${jsFile}"></script>` : ""}
+    ${jsTags}
   </body>
 </html>`;
 
@@ -38,7 +42,7 @@ function prepareVercelDist() {
   const distDir = path.resolve("dist");
   fs.writeFileSync(path.join(distDir, "index.html"), htmlContent);
 
-  console.log("✓ [Postbuild] Successfully created dist/client/index.html & 404.html for Vercel!");
+  console.log("✓ [Postbuild] Successfully created dist/client/index.html & 404.html with all JS/CSS module tags for Vercel!");
 }
 
 prepareVercelDist();
