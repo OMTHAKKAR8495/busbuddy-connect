@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Bus, LogOut, ShieldCheck, Activity, Award, CheckCircle2, X, FileText, Code2, Cpu } from "lucide-react";
+import { Bus, LogOut, ShieldCheck, Award, CheckCircle2, X, FileText, Code2, QrCode } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,8 +13,8 @@ export default function AppShell({
 }: {
   title: string;
   role: string;
-  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
-  overrideRole?: "student" | "driver" | "admin" | null;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | "scanner" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | "scanner" | null;
   children: ReactNode;
 }) {
   const navigate = useNavigate();
@@ -28,30 +28,47 @@ export default function AppShell({
     navigate({ to: "/auth", replace: true });
   }
 
+  // Derive current active role type
+  const activeRoleLower = (overrideRole ?? role).toLowerCase();
+
+  // Role Access Matrix
+  // Student: Student View Only
+  // Driver: Driver Cockpit + QR Scanner (for Bus Entry scanning)
+  // Admin / Teacher: Full access (Admin HQ, Driver, QR Scanner, Student Preview)
+  const isStudent = activeRoleLower.includes("student");
+  const isDriver = activeRoleLower.includes("driver");
+  const isAdmin = activeRoleLower.includes("admin") || activeRoleLower.includes("teacher");
+
+  const allowedTabs = [
+    { id: "student", label: "Student", emoji: "🎓", allowed: true },
+    { id: "driver", label: "Driver", emoji: "🚌", allowed: isDriver || isAdmin },
+    { id: "admin", label: "Admin HQ", emoji: "🛡️", allowed: isAdmin },
+    { id: "scanner", label: "QR Scanner", emoji: "🔍", allowed: isDriver || isAdmin },
+  ].filter((t) => t.allowed);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Faculty Presentation Quick Switcher Bar */}
+      {/* Faculty Presentation & Role Switcher Bar */}
       <div className="border-b border-primary/20 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/10 px-4 py-2 text-xs font-semibold">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Award className="h-4 w-4 text-primary animate-bounce" />
-            <span className="font-bold text-foreground">GSFCU Project Presentation Mode:</span>
-            <span className="text-muted-foreground hidden sm:inline">Demonstration Control Bar for Faculty Evaluation</span>
+            <span className="font-bold text-foreground">GSFCU Role-Based Access Control Active:</span>
+            <span className="text-muted-foreground hidden sm:inline">
+              {isStudent && "Student Profile (Student Pass & Bus Radar Only)"}
+              {isDriver && "Driver Profile (Driver Telemetry + Gate QR Scanner)"}
+              {isAdmin && "Admin / Teacher Profile (Full Access & HQ Controls)"}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground text-[11px] font-mono mr-1">Switch View:</span>
-            {[
-              { id: "student", label: "Student", emoji: "🎓" },
-              { id: "driver", label: "Driver", emoji: "🚌" },
-              { id: "admin", label: "Admin HQ", emoji: "🛡️" },
-              { id: "scanner", label: "QR Scanner", emoji: "🔍" },
-            ].map((tab) => (
+            {allowedTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => onOverrideRole?.(overrideRole === tab.id ? null : (tab.id as never))}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                  (overrideRole ?? role.toLowerCase()).includes(tab.id)
+                  activeRoleLower.includes(tab.id)
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
                 }`}
@@ -91,6 +108,16 @@ export default function AppShell({
           </Link>
 
           <div className="flex items-center gap-3">
+            {/* Quick Navigation for authorized roles */}
+            {(isDriver || isAdmin) && (
+              <button
+                onClick={() => onOverrideRole?.("scanner")}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary/50 transition"
+              >
+                <QrCode className="h-3.5 w-3.5 text-primary" /> QR Scanner
+              </button>
+            )}
+
             <button
               onClick={signOut}
               className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/50 hover:text-destructive hover:bg-destructive/5 active:scale-95"
@@ -129,56 +156,44 @@ export default function AppShell({
             <div className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3 font-mono">
                 <div className="rounded-xl border border-border/80 bg-muted/30 p-3">
-                  <div className="text-muted-foreground text-[10px]">TOTAL OFFICIAL ROUTES</div>
-                  <div className="font-bold text-foreground text-sm">13 Routes (Vadodara)</div>
+                  <div className="text-muted-foreground text-[10px]">ROLE-BASED ACCESS CONTROL</div>
+                  <div className="font-bold text-foreground text-sm">Enforced RLS & Role Scope</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-muted/30 p-3">
-                  <div className="text-muted-foreground text-[10px]">SHUTTLE BUS FLEET</div>
-                  <div className="font-bold text-foreground text-sm">13 Vehicles (GPS Enabled)</div>
+                  <div className="text-muted-foreground text-[10px]">QR SCANNER ACCESS</div>
+                  <div className="font-bold text-foreground text-sm">Driver & Admin Only</div>
                 </div>
               </div>
 
               <div>
                 <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-2">
-                  <Code2 className="h-4 w-4 text-primary" /> Key Project Innovations
+                  <Code2 className="h-4 w-4 text-primary" /> Role Permissions Overview
                 </h4>
                 <ul className="space-y-2 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Cryptographic Dynamic Anti-Fraud Pass:</strong> Generates a rotating security token in the QR code every 15s to block static screenshot sharing.
+                      <strong className="text-foreground">Student Role:</strong> Access restricted strictly to Live Bus Tracking, Digital Anti-Fraud Pass generation, and Route Alerts.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Real-Time WebSockets Telemetry Engine:</strong> Streams lat/lng, speed (km/h), and heading at 2-5s intervals directly to Leaflet map markers.
+                      <strong className="text-foreground">Driver Role:</strong> Shift Start/End, Live GPS Telemetry Broadcast, Emergency SOS, and Gate QR Pass Scanner.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Smart Arrival Predictor:</strong> Calculates exact arrival ETA using Haversine distance math and live vehicle velocity.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">Proximity Alert Dispatch:</strong> Triggers browser push notifications & audio chimes when a shuttle enters &lt; 1.0 km of the student stop.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">Row Level Security (RLS) PostgreSQL Schema:</strong> Multi-tenant security policies protecting student records, driver logs, and admin controls.
+                      <strong className="text-foreground">Admin / Teacher Role:</strong> Master Fleet HQ Command Map, Semester Pass Approval, Driver Management, Speed Analytics, and Scanner.
                     </span>
                   </li>
                 </ul>
               </div>
 
               <div className="rounded-xl bg-primary/5 p-3 border border-primary/20 flex items-center justify-between">
-                <span className="font-semibold text-primary">Tech Stack: React 19 · TanStack Start · TypeScript · Tailwind CSS v4 · Leaflet · Supabase</span>
-                <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">Verified Ready</span>
+                <span className="font-semibold text-primary">Tech Stack: React 19 · TanStack Start · TypeScript · Tailwind CSS v4 · Supabase RLS</span>
+                <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">Security Enforced</span>
               </div>
             </div>
 
