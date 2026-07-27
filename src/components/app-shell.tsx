@@ -30,7 +30,7 @@ export default function AppShell({
     navigate({ to: "/auth", replace: true });
   }
 
-  // Generate formal academic project report PDF
+  // Generate formal academic project report PDF matching GSFC University practical lab manual design
   function handlePrintPDFReport() {
     const printWin = window.open("", "_blank");
     if (!printWin) return toast.error("Pop-up blocked. Please allow pop-ups to print/save PDF.");
@@ -39,73 +39,85 @@ export default function AppShell({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>GSFCU Transit — Academic Project Evaluation Report (Om Thakkar)</title>
+          <title>GSFC University Practical Evaluation Report — GSFCU Transit</title>
           <style>
-            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; }
-            h1 { font-size: 26px; color: #0284c7; border-bottom: 3px solid #0284c7; padding-bottom: 8px; margin-bottom: 4px; }
-            h2 { font-size: 18px; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 24px; }
-            .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-            th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 13px; }
-            th { background: #f1f5f9; font-weight: bold; }
-            .badge { display: inline-block; background: #0284c7; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-            .cost-tag { font-size: 16px; font-weight: bold; color: #059669; }
+            @page { size: A4; margin: 20mm; }
+            body { font-family: 'Times New Roman', Times, serif; padding: 20px; color: #111827; line-height: 1.5; font-size: 13px; }
+            .header-banner { text-align: center; border-bottom: 2px solid #1e3a8a; pb: 12px; margin-bottom: 20px; }
+            .university-logo { font-size: 22px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px; }
+            .sub-logo { font-size: 11px; text-transform: uppercase; color: #047857; letter-spacing: 2px; font-weight: bold; }
+            .title-box { background: #f8fafc; border: 1.5px solid #1e3a8a; padding: 12px; text-align: center; margin: 15px 0; border-radius: 4px; }
+            .title-box h1 { font-size: 18px; color: #1e3a8a; margin: 0; }
+            .title-box h2 { font-size: 13px; color: #475569; margin: 4px 0 0 0; font-weight: normal; }
+            .table-spec { width: 100%; border-collapse: collapse; margin: 12px 0; }
+            .table-spec th, .table-spec td { border: 1px solid #94a3b8; padding: 8px 10px; font-size: 12px; }
+            .table-spec th { background: #1e3a8a; color: white; text-align: left; }
+            .section-header { background: #1e3a8a; color: white; padding: 6px 12px; font-weight: bold; font-size: 14px; margin-top: 20px; border-radius: 2px; }
+            .footer-bar { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
+            ul { margin: 6px 0; padding-left: 20px; }
+            li { margin-bottom: 4px; }
           </style>
         </head>
         <body>
-          <span class="badge">GSFC UNIVERSITY FINAL PROJECT REPORT</span>
-          <h1>GSFCU Transit & Smart Campus Mobility System</h1>
-          
-          <div class="meta-box">
-            <p><strong>Author:</strong> Om Thakkar (Roll No: 24BT04171)</p>
-            <p><strong>Department:</strong> Computer Science & Engineering</p>
-            <p><strong>Institution:</strong> GSFC University, Vadodara, Gujarat</p>
-            <p><strong>Development Period:</strong> 4 Weeks (Sprint Cycle)</p>
-            <p><strong>Live Web Application:</strong> https://busbuddy-connect.vercel.app</p>
-            <p><strong>Source Repository:</strong> https://github.com/OMTHAKKAR8495/busbuddy-connect.git</p>
+          <div class="header-banner">
+            <div class="university-logo">🌲 GSFC UNIVERSITY</div>
+            <div class="sub-logo">EDUCATION RE-ENVISIONED</div>
+            <div style="font-size: 12px; margin-top: 4px; font-weight: bold;">Software Engineering Laboratory — GSFC University</div>
           </div>
 
-          <h2>1. Executive Summary & Innovation</h2>
-          <p>GSFCU Transit is a cloud-native smart campus transit management platform built specifically for GSFC University's 13 official bus routes. It introduces live smartphone GPS bus telemetry, anti-fraud dynamic 15-second rotating QR passes, realtime conductor gate QR scanning via <code>jsQR</code>, and master admin HQ fleet management.</p>
-
-          <h2>2. Technical Architecture & Stack</h2>
-          <table>
-            <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
-            <tr><td>Frontend</td><td>React 19, TypeScript, Vite, Tailwind CSS v4</td><td>Responsive Client Single Page Application (375px-430px Mobile & Desktop)</td></tr>
-            <tr><td>Routing & State</td><td>TanStack Router, TanStack Query v5</td><td>Type-safe routing and state caching</td></tr>
-            <tr><td>Live Radar Maps</td><td>Leaflet.js, OpenStreetMap API</td><td>Interactive bus position tracking and route polyline overlays</td></tr>
-            <tr><td>Database & Realtime</td><td>Supabase PostgreSQL (RLS), MongoDB Atlas</td><td>Row Level Security, WebSockets telemetry stream</td></tr>
-            <tr><td>QR Scanner Engine</td><td><code>jsQR</code> + WebRTC MediaDevices API</td><td>High-speed phone rear camera QR frame decoding loop</td></tr>
-          </table>
-
-          <h2>3. Development Period & Timeline (4 Weeks)</h2>
-          <table>
-            <tr><th>Week</th><th>Sprint Scope</th><th>Key Deliverables</th></tr>
-            <tr><td>Week 1</td><td>Requirements & Route Seeding</td><td>Seeded 13 official GSFCU bus routes, PostgreSQL & MongoDB database schemas.</td></tr>
-            <tr><td>Week 2</td><td>Realtime Radar & Telemetry</td><td>Leaflet bus tracking radar map, Driver shift control cockpit, GPS broadcast.</td></tr>
-            <tr><td>Week 3</td><td>Digital Pass & Admin HQ</td><td>15s TOTP rotating QR pass, Student photo avatar, Admin approval queue.</td></tr>
-            <tr><td>Week 4</td><td>Conductor QR Scanner & Cloud Deploy</td><td><code>jsQR</code> realtime camera decoder, Mobile bottom bar, RBAC, Vercel deployment.</td></tr>
-          </table>
-
-          <h2>4. Project Cost Analysis & Budget Estimation</h2>
-          <table>
-            <tr><th>Cost Category</th><th>Description</th><th>Commercial Estimate</th></tr>
-            <tr><td>UI/UX Design</td><td>Responsive Mobile Glassmorphism System</td><td>₹25,000 ($300 USD)</td></tr>
-            <tr><td>Frontend Engineering</td><td>React 19, TypeScript, TanStack, Leaflet Maps</td><td>₹75,000 ($900 USD)</td></tr>
-            <tr><td>Backend & Security</td><td>Supabase PostgreSQL RLS, WebSockets, MongoDB</td><td>₹50,000 ($600 USD)</td></tr>
-            <tr><td>QR Scanner Engine</td><td><code>jsQR</code> Realtime Camera Frame Decoder</td><td>₹30,000 ($360 USD)</td></tr>
-            <tr><td>QA & Cloud CI/CD</td><td>Vercel Deployment, Cross-browser QA</td><td>₹20,000 ($240 USD)</td></tr>
-            <tr><th>Total Commercial Build Value</th><th>Full Production Fleet Platform</th><th class="cost-tag">₹2,00,000 ($2,400 USD)</th></tr>
-          </table>
-
-          <div class="meta-box" style="margin-top: 20px;">
-            <p><strong>Cloud Infrastructure Cost:</strong> ₹0 / Month (Vercel + Supabase + MongoDB Free Tier)</p>
-            <p><strong>Hardware Cost Savings:</strong> Saved ₹1,50,000 upfront hardware costs by using Driver Smartphone Telemetry instead of expensive GPS hardware units.</p>
+          <div class="title-box">
+            <h1>Practical Evaluation Report</h1>
+            <h2>Identifying & Implementing Requirements for Smart Campus Transit System</h2>
           </div>
 
-          <div style="margin-top: 40px; text-align: right;">
-            <p>_______________________________</p>
-            <p><strong>Om Thakkar (24BT04171)</strong><br/>Computer Science & Engineering</p>
+          <table class="table-spec">
+            <tr><td><strong>Course:</strong> Software Engineering Laboratory</td><td><strong>Practical No.:</strong> Final Software Project Evaluation</td></tr>
+            <tr><td><strong>Selected Application:</strong> GSFCU Transit (BusBuddy Connect)</td><td><strong>Topic:</strong> Requirement Analysis, Design & Implementation</td></tr>
+            <tr><td><strong>Student Author:</strong> Om Thakkar (Roll No: 24BT04171)</td><td><strong>Department:</strong> Computer Science & Engineering</td></tr>
+            <tr><td><strong>Live Deployment:</strong> https://busbuddy-connect.vercel.app</td><td><strong>GitHub Repository:</strong> https://github.com/OMTHAKKAR8495/busbuddy-connect.git</td></tr>
+          </table>
+
+          <div class="section-header">(i) Define Requirements</div>
+          <p>A <strong>requirement</strong> is a documented statement of a capability, feature, function, or constraint that a system must satisfy to solve a real-world problem. Requirements form the foundation of the entire Software Development Life Cycle (SDLC).</p>
+          <ul>
+            <li><strong>Functional Requirements (FR):</strong> Define specific behavior, functions, or features of the system (what the system does).</li>
+            <li><strong>Non-Functional Requirements (NFR):</strong> Define quality attributes, performance, security, and operational constraints (how well the system performs).</li>
+          </ul>
+
+          <div class="section-header">(ii) Functional Requirements (FR)</div>
+          <table class="table-spec">
+            <tr><th style="width: 15%;">ID</th><th>Requirement Description</th></tr>
+            <tr><td><strong>FR-1</strong></td><td>The system shall authenticate Students, Drivers, and Admins with Role-Based Access Control (RBAC).</td></tr>
+            <tr><td><strong>FR-2</strong></td><td>The system shall display 13 official GSFC University routes with Leaflet realtime map markers.</td></tr>
+            <tr><td><strong>FR-3</strong></td><td>The system shall generate an anti-fraud dynamic digital bus pass with a 15-second rotating QR token, student photo, and Roll Number 24BT04171.</td></tr>
+            <tr><td><strong>FR-4</strong></td><td>The system shall provide drivers with a shift cockpit to broadcast live smartphone GPS location stream.</td></tr>
+            <tr><td><strong>FR-5</strong></td><td>The system shall provide gate conductors with a <code>jsQR</code> realtime phone camera scanner to verify student identity.</td></tr>
+            <tr><td><strong>FR-6</strong></td><td>The system shall provide an Admin HQ panel for pass approvals, fee verification, and emergency SOS dispatch.</td></tr>
+          </table>
+
+          <div class="section-header">(iii) Non-Functional Requirements (NFR)</div>
+          <table class="table-spec">
+            <tr><th style="width: 15%;">ID</th><th style="width: 25%;">Category</th><th>Requirement Description</th></tr>
+            <tr><td><strong>NFR-1</strong></td><td>Performance</td><td>The bus tracking radar page shall render within 1.5 seconds under normal load.</td></tr>
+            <tr><td><strong>NFR-2</strong></td><td>Security</td><td>Dynamic pass QR tokens shall expire every 15 seconds to prevent screenshot pass sharing.</td></tr>
+            <tr><td><strong>NFR-3</strong></td><td>Usability</td><td>The mobile view shall feature a touch navigation bar optimized for 375px–430px smartphone screens.</td></tr>
+            <tr><td><strong>NFR-4</strong></td><td>Availability</td><td>The application shall maintain 99.9% uptime on Vercel Global Edge CDN.</td></tr>
+          </table>
+
+          <div class="section-header">(iv) Project Timeline, Commercial Cost & Infrastructure Budget</div>
+          <table class="table-spec">
+            <tr><th>Phase</th><th>Execution Scope</th><th>Commercial Estimate</th></tr>
+            <tr><td>Week 1</td><td>Requirement Gathering, GSFCU 13 Routes Seeding & PostgreSQL Schemas</td><td>₹25,000 ($300 USD)</td></tr>
+            <tr><td>Week 2</td><td>Realtime Leaflet Map Radar & Driver Telemetry GPS Broadcast</td><td>₹75,000 ($900 USD)</td></tr>
+            <tr><td>Week 3</td><td>15s Rotating TOTP Digital Pass, Student Photo Avatar & Admin HQ Queue</td><td>₹50,000 ($600 USD)</td></tr>
+            <tr><td>Week 4</td><td><code>jsQR</code> Phone Camera QR Scanner, Mobile UI & Vercel Cloud Deployment</td><td>₹50,000 ($600 USD)</td></tr>
+            <tr><th colspan="2">Total Commercial Project Build Value</th><th>₹2,00,000 ($2,400 USD)</th></tr>
+          </table>
+          <p style="font-size: 11px; margin-top: 4px;"><em>*Monthly Infrastructure Hosting Cost: ₹0 / Month (Leveraging Vercel + Supabase + MongoDB free tiers). Hardware savings of ₹1,50,000 achieved by using Driver Smartphone GPS.*</em></p>
+
+          <div class="footer-bar">
+            <span>Software Engineering Laboratory — GSFC University</span>
+            <span>Page 1 of 1</span>
           </div>
 
           <script>
@@ -139,9 +151,9 @@ export default function AppShell({
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Award className="h-4 w-4 text-primary animate-bounce shrink-0" />
-            <span className="font-bold text-foreground">GSFCU Presentation Control Bar:</span>
+            <span className="font-bold text-foreground">GSFCU Practical Evaluation:</span>
             <span className="text-muted-foreground hidden sm:inline">
-              Author: Om Thakkar (24BT04171)
+              Author: Om Thakkar (Roll 24BT04171)
             </span>
           </div>
 
@@ -159,12 +171,12 @@ export default function AppShell({
               <span>{mobileSimulated ? "Exit Mobile Mode" : "📱 Mobile View"}</span>
             </button>
 
-            {/* Print PDF Report Button */}
+            {/* Print Official GSFC University Report PDF */}
             <button
               onClick={handlePrintPDFReport}
               className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-700 transition"
             >
-              <Printer className="h-3.5 w-3.5" /> Download Report (PDF)
+              <Printer className="h-3.5 w-3.5" /> Print GSFCU Report (PDF)
             </button>
 
             <div className="hidden sm:flex items-center gap-1.5">
@@ -187,7 +199,7 @@ export default function AppShell({
                 onClick={() => setShowSpecModal(true)}
                 className="ml-1 inline-flex items-center gap-1 rounded-lg bg-card border border-primary/40 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/5 transition"
               >
-                <FileText className="h-3.5 w-3.5" /> Project Specs
+                <FileText className="h-3.5 w-3.5" /> Specs
               </button>
             </div>
           </div>
@@ -303,12 +315,12 @@ export default function AppShell({
             <div className="flex items-start justify-between border-b border-border/60 pb-3">
               <div>
                 <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
-                  GSFC UNIVERSITY EVALUATION SPEC SHEET
+                  GSFC UNIVERSITY EVALUATION REPORT
                 </span>
                 <h3 className="font-display text-xl sm:text-2xl font-extrabold mt-1">
-                  Smart Campus Transit & Fleet System (2026-27)
+                  Practical Evaluation: Requirements & Implementation
                 </h3>
-                <p className="text-xs text-muted-foreground">Author: Om Thakkar · Computer Science & Engineering</p>
+                <p className="text-xs text-muted-foreground">Author: Om Thakkar (24BT04171) · Computer Science & Engineering</p>
               </div>
               <button
                 onClick={() => setShowSpecModal(false)}
@@ -342,13 +354,13 @@ export default function AppShell({
 
               <div>
                 <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-2">
-                  <Code2 className="h-4 w-4 text-primary" /> Core Technical Features
+                  <Code2 className="h-4 w-4 text-primary" /> System Architecture & Requirements
                 </h4>
                 <ul className="space-y-2 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Realtime Conductor Gate QR Scanner (`jsQR`):</strong> High-speed phone camera frame decoding loop for identity verification.
+                      <strong className="text-foreground">Realtime Gate QR Scanner (`jsQR`):</strong> High-speed phone camera decoder for instant student identity verification.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -365,13 +377,13 @@ export default function AppShell({
                   onClick={handlePrintPDFReport}
                   className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-md flex items-center gap-1.5"
                 >
-                  <Printer className="h-4 w-4" /> Download Printable Report (PDF)
+                  <Printer className="h-4 w-4" /> Print Official GSFCU Report (PDF)
                 </button>
                 <button
                   onClick={() => setShowSpecModal(false)}
                   className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-md min-h-[40px]"
                 >
-                  Close Spec Sheet
+                  Close Report
                 </button>
               </div>
             </div>
