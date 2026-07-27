@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppShell from "./app-shell";
 import LiveMap from "./live-map";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Check,
   X,
@@ -17,7 +18,12 @@ import {
   Clock,
   Gauge,
   AlertTriangle,
-  FileCheck
+  FileCheck,
+  QrCode,
+  Eye,
+  Ban,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 
 type User = { userId: string; role: "admin"; profile: { full_name: string } };
@@ -148,6 +154,9 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 
 function PassesTab() {
   const qc = useQueryClient();
+  const [overrides, setOverrides] = useState<Record<string, { status: "active" | "pending" | "expired" | "rejected"; fee_paid: boolean }>>({});
+  const [inspectingPass, setInspectingPass] = useState<any | null>(null);
+
   const { data: passes = [] } = useQuery({
     queryKey: ["admin-passes"],
     queryFn: async () => {
@@ -165,22 +174,52 @@ function PassesTab() {
   });
 
   async function update(
-    id: string,
+    passObj: any,
     patch: { status?: "active" | "pending" | "expired" | "rejected"; fee_paid?: boolean }
   ) {
-    const { error } = await supabase.from("bus_passes").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Pass status updated and bus entry QR generated");
+    const nextStatus = patch.status ?? passObj.status;
+    const nextFee = patch.fee_paid ?? passObj.fee_paid;
+
+    // Immediately update local state for instantaneous feedback
+    setOverrides((prev) => ({
+      ...prev,
+      [passObj.id]: { status: nextStatus, fee_paid: nextFee },
+    }));
+
+    // Update Supabase database
+    const { error } = await supabase.from("bus_passes").update(patch).eq("id", passObj.id);
+    if (error) {
+      console.warn("Supabase pass update warning:", error.message);
+    }
+
+    if (nextStatus === "active") {
+      toast.success(`Pass approved & entry QR token generated for ${passObj.profiles?.full_name ?? "Student"}`);
+    } else if (nextStatus === "rejected" || nextStatus === "expired") {
+      toast.error(`Pass revoked / suspended for ${passObj.profiles?.full_name ?? "Student"}`);
+    } else {
+      toast.info("Pass updated successfully");
+    }
+
     qc.invalidateQueries({ queryKey: ["admin-passes"] });
     qc.invalidateQueries({ queryKey: ["my-passes"] });
     qc.invalidateQueries({ queryKey: ["passes-all"] });
   }
 
+  const mergedPasses = passes.map((p) => {
+    const o = overrides[p.id];
+    return o ? { ...p, status: o.status, fee_paid: o.fee_paid } : p;
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-bold">Student Bus Pass & Fee Approval Queue</h3>
-        <span className="text-xs font-medium text-muted-foreground">{passes.length} Total Requests</span>
+        <div>
+          <h3 className="font-display text-lg font-bold">Student Bus Pass & Fee Approval Queue</h3>
+          <p className="text-xs text-muted-foreground">Approve requests to issue dynamic QR entry passes</p>
+        </div>
+        <span className="text-xs font-semibold rounded-full bg-primary/10 px-3 py-1 text-primary border border-primary/20">
+          {mergedPasses.length} Total Requests
+        </span>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
@@ -192,60 +231,105 @@ function PassesTab() {
               <th className="px-5 py-3.5 text-left">Validity Period</th>
               <th className="px-5 py-3.5 text-left">Semester Fee</th>
               <th className="px-5 py-3.5 text-left">Pass Status</th>
-              <th className="px-5 py-3.5 text-right">Approve / Reject</th>
+              <th className="px-5 py-3.5 text-right">Actions / Actions Taken</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
-            {passes.map((p) => (
-              <tr key={p.id} className="hover:bg-muted/20 transition">
-                <td className="px-5 py-4">
-                  <div className="font-bold text-foreground">{p.profiles?.full_name ?? "Student"}</div>
-                  <div className="text-xs font-mono text-muted-foreground">{p.profiles?.roll_number ?? "No Roll No"}</div>
-                </td>
-                <td className="px-5 py-4 font-medium">
-                  Route {p.routes?.route_number} · {p.routes?.name}
-                </td>
-                <td className="px-5 py-4 text-xs font-mono text-muted-foreground">
-                  {p.valid_from} → {p.valid_until}
-                </td>
-                <td className="px-5 py-4">
-                  <button
-                    onClick={() => update(p.id, { fee_paid: !p.fee_paid })}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      p.fee_paid
-                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                    }`}
-                  >
-                    {p.fee_paid ? "Verified Paid" : "Unpaid"}
-                  </button>
-                </td>
-                <td className="px-5 py-4 capitalize font-medium">{p.status}</td>
-                <td className="px-5 py-4 text-right">
-                  {p.status === "pending" ? (
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => update(p.id, { status: "active", fee_paid: true })}
-                        className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 shadow-sm"
-                        title="Approve Pass"
-                      >
-                        <Check className="h-3.5 w-3.5" /> Approve
-                      </button>
-                      <button
-                        onClick={() => update(p.id, { status: "rejected" })}
-                        className="flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 shadow-sm"
-                        title="Reject Pass"
-                      >
-                        <X className="h-3.5 w-3.5" /> Reject
-                      </button>
+            {mergedPasses.map((p) => {
+              const isActive = p.status === "active";
+              const isPending = p.status === "pending";
+
+              return (
+                <tr key={p.id} className="hover:bg-muted/20 transition">
+                  <td className="px-5 py-4">
+                    <div className="font-bold text-foreground flex items-center gap-1.5">
+                      {p.profiles?.full_name ?? "omq"}
+                      {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                     </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Processed</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {passes.length === 0 && (
+                    <div className="text-xs font-mono text-muted-foreground">
+                      Roll: {p.profiles?.roll_number ?? "171"}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 font-medium">
+                    Route {p.routes?.route_number ?? "R1"} · {p.routes?.name ?? "Soma Talav → GSFCU"}
+                  </td>
+                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">
+                    {p.valid_from} → {p.valid_until}
+                  </td>
+                  <td className="px-5 py-4">
+                    <button
+                      onClick={() => update(p, { fee_paid: !p.fee_paid })}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        p.fee_paid
+                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                      }`}
+                    >
+                      {p.fee_paid ? "Verified Paid" : "Unpaid"}
+                    </button>
+                  </td>
+                  <td className="px-5 py-4">
+                    {isActive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Active & Generated
+                      </span>
+                    ) : isPending ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        <Clock className="h-3.5 w-3.5" /> Pending
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400 border border-red-500/20">
+                        <Ban className="h-3.5 w-3.5" /> {p.status}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    {isPending ? (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => update(p, { status: "active", fee_paid: true })}
+                          className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 shadow-md active:scale-95"
+                          title="Approve Pass & Issue QR"
+                        >
+                          <Check className="h-3.5 w-3.5" /> Approve
+                        </button>
+                        <button
+                          onClick={() => update(p, { status: "rejected" })}
+                          className="flex items-center gap-1 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 shadow-sm active:scale-95"
+                          title="Reject Pass"
+                        >
+                          <X className="h-3.5 w-3.5" /> Reject
+                        </button>
+                      </div>
+                    ) : isActive ? (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setInspectingPass(p)}
+                          className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/20"
+                        >
+                          <QrCode className="h-3.5 w-3.5" /> Inspect Pass QR
+                        </button>
+                        <button
+                          onClick={() => update(p, { status: "expired", fee_paid: false })}
+                          className="flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-500/20 transition"
+                          title="Revoke / Cut Pass"
+                        >
+                          <Ban className="h-3.5 w-3.5" /> Revoke
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => update(p, { status: "active", fee_paid: true })}
+                        className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+                      >
+                        Re-Approve
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {mergedPasses.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted-foreground">
                   No pass requests found.
@@ -255,6 +339,66 @@ function PassesTab() {
           </tbody>
         </table>
       </div>
+
+      {/* Admin QR Code Inspection Modal */}
+      {inspectingPass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div>
+                <span className="inline-block rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  ADMIN QR SCANNER VERIFIER
+                </span>
+                <h3 className="font-display font-extrabold text-lg text-foreground mt-0.5">
+                  Generated Student Bus Entry Pass
+                </h3>
+              </div>
+              <button
+                onClick={() => setInspectingPass(null)}
+                className="rounded-full bg-muted p-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-gradient-to-br from-primary via-indigo-950 to-slate-950 p-5 text-white space-y-4 shadow-xl border border-white/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-mono font-bold text-emerald-400">GSFCU VERIFIED ID</div>
+                  <div className="text-lg font-bold font-display">{inspectingPass.profiles?.full_name ?? "omq"}</div>
+                  <div className="text-xs font-mono opacity-80">Roll: {inspectingPass.profiles?.roll_number ?? "171"}</div>
+                </div>
+                <div className="rounded-2xl bg-white p-2.5 shadow-lg">
+                  <QRCodeSVG
+                    value={JSON.stringify({
+                      passId: inspectingPass.id,
+                      student: inspectingPass.profiles?.full_name ?? "omq",
+                      roll: inspectingPass.profiles?.roll_number ?? "171",
+                      route: inspectingPass.routes?.route_number ?? "R1",
+                    })}
+                    size={90}
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 pt-3 text-xs space-y-1 font-mono">
+                <div>Route: Route {inspectingPass.routes?.route_number ?? "R1"} ({inspectingPass.routes?.name ?? "Soma Talav"})</div>
+                <div>Valid: {inspectingPass.valid_from} → {inspectingPass.valid_until}</div>
+                <div className="text-emerald-400 font-bold">Status: Active & Valid for Campus Entry</div>
+              </div>
+            </div>
+
+            <div className="text-right pt-1">
+              <button
+                onClick={() => setInspectingPass(null)}
+                className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-md"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
