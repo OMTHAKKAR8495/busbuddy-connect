@@ -322,6 +322,7 @@ function PassPanel({ user }: { user: User }) {
         .order("created_at", { ascending: false });
       return data ?? [];
     },
+    refetchInterval: 2000,
   });
 
   const { data: routes = [] } = useQuery({
@@ -489,10 +490,12 @@ function DigitalPass({
     valid_until: string;
     valid_from: string;
     routes?: { route_number?: string; name?: string } | null;
+    stops?: { name?: string } | null;
   };
   user: User;
 }) {
   const [tick, setTick] = useState(0);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     const i = setInterval(() => setTick((t) => t + 1), 1000);
@@ -513,64 +516,164 @@ function DigitalPass({
   void tick;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-indigo-900 to-slate-900 text-white shadow-2xl glow-card border border-white/10">
-      {/* Animated Security Scanner Line across card */}
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse" />
+    <div className="space-y-4">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-indigo-900 to-slate-900 text-white shadow-2xl glow-card border border-white/10">
+        {/* Animated Security Scanner Line across card */}
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse" />
 
-      {/* Header Badge */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-white/10">
-        <div>
-          <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-emerald-400 uppercase">
-            <Sparkles className="h-3 w-3" /> GSFCU VERIFIED DIGITAL PASS
+        {/* Header Badge */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-white/10">
+          <div>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
+              <Sparkles className="h-3 w-3" /> GSFC UNIVERSITY VERIFIED BUS PASS
+            </div>
+            <div className="font-display text-xl font-extrabold mt-0.5">
+              Route {pass.routes?.route_number} · {pass.routes?.name}
+            </div>
           </div>
-          <div className="font-display text-2xl font-extrabold mt-0.5">
-            Route {pass.routes?.route_number} · {pass.routes?.name}
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
+            <ShieldCheck className="h-6 w-6 text-emerald-400" />
           </div>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
-          <ShieldCheck className="h-6 w-6 text-emerald-400" />
-        </div>
-      </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-[1fr_auto] items-center gap-6">
-          <div className="space-y-2">
-            <div>
-              <div className="text-[11px] uppercase tracking-wider opacity-70">Student Holder</div>
-              <div className="text-xl font-bold font-display">{user.profile.full_name}</div>
-              {user.profile.roll_number && (
-                <div className="text-xs font-mono opacity-80 mt-0.5">Roll No: {user.profile.roll_number}</div>
-              )}
+        <div className="p-6">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-5">
+            {/* Student Identity Photo Container */}
+            <div className="relative flex flex-col items-center">
+              <div className="relative h-20 w-20 overflow-hidden rounded-2xl border-2 border-emerald-400/80 bg-slate-800 shadow-md">
+                {user.profile.photo_url ? (
+                  <img src={user.profile.photo_url} alt={user.profile.full_name} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-tr from-primary to-indigo-600 text-white font-bold text-xl font-display">
+                    {user.profile.full_name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute bottom-0 inset-x-0 bg-emerald-500 py-0.5 text-[8px] font-bold uppercase text-center text-slate-950 font-mono tracking-tighter">
+                  VERIFIED
+                </span>
+              </div>
             </div>
 
-            <div className="pt-2">
-              <div className="text-[11px] uppercase tracking-wider opacity-70">Pass Validity Period</div>
-              <div className="text-xs font-medium font-mono">
-                {pass.valid_from} → {pass.valid_until}
+            {/* Student Holder Info */}
+            <div className="space-y-1.5">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider opacity-70 font-mono">Student ID / Holder</div>
+                <div className="text-lg font-bold font-display text-white leading-tight">{user.profile.full_name}</div>
+                <div className="text-xs font-mono text-emerald-300 font-bold mt-0.5">
+                  Roll: {user.profile.roll_number ?? "24BT04171"}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-wider opacity-70 font-mono">Validity Period</div>
+                <div className="text-[11px] font-semibold font-mono text-slate-200">
+                  {pass.valid_from} → {pass.valid_until}
+                </div>
+              </div>
+            </div>
+
+            {/* Dynamic Rotating QR Code */}
+            <div className="relative rounded-2xl bg-white p-3 shadow-lg border-2 border-emerald-400/50 flex flex-col items-center shrink-0">
+              <QRCodeSVG value={qrValue} size={110} level="M" />
+              <div className="mt-1 text-center font-mono text-[8px] font-bold text-slate-900 tracking-tighter">
+                ENTRY SCANNER QR
               </div>
             </div>
           </div>
 
-          {/* Dynamic Rotating QR Code */}
-          <div className="relative rounded-2xl bg-white p-3.5 shadow-lg border-2 border-emerald-400/40">
-            <QRCodeSVG value={qrValue} size={130} level="M" />
-            <div className="mt-1 text-center font-mono text-[9px] font-bold text-slate-800 tracking-wider">
-              ROTATING TOKEN
+          {/* Anti-Fraud Security Ticker Bar */}
+          <div className="mt-5 flex items-center justify-between rounded-xl bg-black/40 px-4 py-3 text-xs border border-white/10">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+              <span className="font-mono text-emerald-400 font-bold text-[11px]">{token}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] opacity-80">
+                Renews in <span className="font-bold text-white font-mono">{secondsRemaining}s</span>
+              </span>
+              <button
+                onClick={() => setShowPrintModal(true)}
+                className="rounded-lg bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-slate-950 transition hover:bg-emerald-400 shadow-sm"
+              >
+                Print Entry Pass
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Anti-Fraud Security Ticker Bar */}
-        <div className="mt-6 flex items-center justify-between rounded-xl bg-black/40 px-4 py-3 text-xs border border-white/10">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-            <span className="font-mono text-emerald-400 font-bold">{token}</span>
-          </div>
-          <div className="text-[11px] opacity-80">
-            Renews in <span className="font-bold text-white font-mono">{secondsRemaining}s</span>
+      {/* Official Printable Bus Entry Pass Modal */}
+      {showPrintModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-white text-slate-900 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <Bus className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="font-display font-extrabold text-base text-slate-900 leading-tight">
+                    GSFC UNIVERSITY BUS ENTRY PASS
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-mono">Official Academic Pass · Semester 2026-27</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPrintModal(false)}
+                className="rounded-full bg-slate-100 p-1 text-slate-500 hover:text-slate-900"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Printable Pass Card Surface */}
+            <div className="rounded-2xl border-2 border-slate-900 bg-slate-50 p-5 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 overflow-hidden rounded-xl border border-slate-400 bg-slate-200 flex items-center justify-center font-bold text-2xl text-slate-700 font-display">
+                  {user.profile.full_name.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase text-primary font-mono">STUDENT IDENTITY</div>
+                  <div className="font-display text-lg font-bold text-slate-900">{user.profile.full_name}</div>
+                  <div className="text-xs font-mono font-semibold text-slate-600">
+                    Roll No: {user.profile.roll_number ?? "24BT04171"}
+                  </div>
+                  <div className="text-xs font-semibold text-slate-700 mt-1">
+                    Route: {pass.routes?.route_number} ({pass.routes?.name})
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-slate-300 pt-3">
+                <div>
+                  <div className="text-[9px] font-mono text-slate-500 uppercase">Validity Dates</div>
+                  <div className="text-xs font-mono font-bold text-slate-800">
+                    {pass.valid_from} to {pass.valid_until}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 font-bold mt-1">✓ Admin Fee Verified & Approved</div>
+                </div>
+
+                <div className="rounded-xl bg-white p-2 border border-slate-300">
+                  <QRCodeSVG value={qrValue} size={90} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => window.print()}
+                className="flex-1 rounded-xl bg-primary py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary/90 transition"
+              >
+                🖨️ Print / Save PDF
+              </button>
+              <button
+                onClick={() => setShowPrintModal(false)}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

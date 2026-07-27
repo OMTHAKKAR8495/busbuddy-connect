@@ -170,8 +170,10 @@ function PassesTab() {
   ) {
     const { error } = await supabase.from("bus_passes").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Pass status updated");
+    toast.success("Pass status updated and bus entry QR generated");
     qc.invalidateQueries({ queryKey: ["admin-passes"] });
+    qc.invalidateQueries({ queryKey: ["my-passes"] });
+    qc.invalidateQueries({ queryKey: ["passes-all"] });
   }
 
   return (
