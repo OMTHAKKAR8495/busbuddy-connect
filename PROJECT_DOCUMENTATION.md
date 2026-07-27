@@ -78,7 +78,7 @@ Requirements are broadly classified into:
 
 ---
 
-### (v) Project Timeline, Execution Period & Cost Breakdown (in INR ₹)
+### (v) Project Timeline, Execution Period & Cost Breakdown (INR ₹ & USD $)
 
 #### A. Development Period (4-Week Sprint Schedule)
 - **Total Development Time**: **4 Weeks (1 Month)**
@@ -87,23 +87,23 @@ Requirements are broadly classified into:
 - **Week 3 (Digital Pass & Admin HQ)**: Developing student digital pass with 15s TOTP rotating QR code, student photo avatar, print modal, and Admin approval queue.
 - **Week 4 (Conductor QR Scanner & Cloud Deploy)**: Integrating `jsQR` live phone camera decoder, mobile bottom navigation bar, role-based access matrix, and Vercel cloud deployment.
 
-#### B. Commercial Cost Estimation & Budget Analysis (in INR ₹)
+#### B. Commercial Cost Estimation & Budget Analysis (INR ₹ & USD $)
 
-| Cost Category | Scope & Technical Details | Commercial Estimate (INR ₹) |
-| :--- | :--- | :---: |
-| **UI/UX Design & Prototyping** | Glassmorphism responsive design system, mobile simulator | ₹25,000 |
-| **Frontend Engineering** | React 19, TypeScript, Vite, TanStack Router, Leaflet Maps Engine | ₹75,000 |
-| **Backend & Security** | Supabase PostgreSQL, Row Level Security (RLS), MongoDB | ₹50,000 |
-| **QR Scanner Engine** | `jsQR` phone camera frame decoding loop, TOTP anti-fraud token engine | ₹30,000 |
-| **QA & Cloud CI/CD** | Mobile viewport testing (375px–430px), Vercel cloud deployment | ₹20,000 |
-| **TOTAL COMMERCIAL PROJECT BUILD COST** | **Complete Production Campus Transit Platform** | **₹2,00,000 INR** |
+| Cost Category | Scope & Technical Details | Commercial Estimate (INR ₹) | Commercial Estimate (USD $) |
+| :--- | :--- | :---: | :---: |
+| **UI/UX Design & Prototyping** | Glassmorphism responsive design system, mobile simulator | ₹25,000 INR | $300 USD |
+| **Frontend Engineering** | React 19, TypeScript, Vite, TanStack Router, Leaflet Maps Engine | ₹75,000 INR | $900 USD |
+| **Backend & Security** | Supabase PostgreSQL, Row Level Security (RLS), MongoDB | ₹50,000 INR | $600 USD |
+| **QR Scanner Engine** | `jsQR` phone camera frame decoding loop, TOTP anti-fraud token engine | ₹30,000 INR | $360 USD |
+| **QA & Cloud CI/CD** | Mobile viewport testing (375px–430px), Vercel cloud deployment | ₹20,000 INR | $240 USD |
+| **TOTAL COMMERCIAL PROJECT BUILD COST** | **Complete Production Campus Transit Platform** | **₹2,00,000 INR** | **$2,400 USD** |
 
-#### C. Operational Cloud Infrastructure & Hardware Savings (in INR ₹)
-- **Vercel Web Hosting**: **₹0 / Month** (Free Hobby CDN Tier)
-- **Supabase PostgreSQL & Realtime**: **₹0 / Month** (Free Tier)
-- **MongoDB Atlas Cluster**: **₹0 / Month** (Free Tier)
-- **TOTAL MONTHLY OPERATIONAL COST**: **₹0 / Month**
-- **HARDWARE COST SAVINGS**: **Saved ₹1,50,000 INR upfront** by utilizing Driver Smartphone GPS Telemetry instead of purchasing external hardware tracker units for 13 buses!
+#### C. Operational Cloud Infrastructure & Hardware Savings (INR ₹ & USD $)
+- **Vercel Web Hosting**: **₹0 / Month ($0 USD)** (Free Hobby CDN Tier)
+- **Supabase PostgreSQL & Realtime**: **₹0 / Month ($0 USD)** (Free Tier)
+- **MongoDB Atlas Cluster**: **₹0 / Month ($0 USD)** (Free Tier)
+- **TOTAL MONTHLY OPERATIONAL COST**: **₹0 / Month ($0 USD)**
+- **HARDWARE COST SAVINGS**: **Saved ₹1,50,000 INR ($1,800 USD) upfront** by utilizing Driver Smartphone GPS Telemetry instead of purchasing external hardware tracker units for 13 buses!
 
 ---
 
