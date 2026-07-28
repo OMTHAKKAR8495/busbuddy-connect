@@ -682,6 +682,8 @@ function AnalyticsTab() {
 function AttendancePanel() {
   const [logs, setLogs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [filterRoute, setFilterRoute] = useState("");
+  const [filterDestination, setFilterDestination] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("July 2026");
 
@@ -728,7 +730,7 @@ function AttendancePanel() {
             id: "scan-103",
             student_name: "Alex Sharma",
             roll_number: "22CS089",
-            department: "Chemical Engineering",
+            department: "Mechanical Engineering",
             route_number: "Route 2",
             pickup_stop: "Sama Savli Circle",
             fee_status: "Verified Paid",
@@ -763,7 +765,7 @@ function AttendancePanel() {
             pickup_stop: "Soma Talav (BPC Pump)",
             fee_status: "Verified Paid",
             status: "Boarded (Valid Pass)",
-            scanned_at: "2026-07-24T08:15:30.000Z",
+            scanned_at: "2026-07-24T08:15:00.000Z",
             scan_date: "2026-07-24",
             scan_time: "08:15 AM",
             scan_day: "Friday",
@@ -773,7 +775,7 @@ function AttendancePanel() {
             id: "scan-106",
             student_name: "Rohan Varma",
             roll_number: "24ME055",
-            department: "Mechanical Engineering",
+            department: "Civil Engineering",
             route_number: "Route 6",
             pickup_stop: "Subhanpura",
             fee_status: "Verified Paid",
@@ -795,11 +797,21 @@ function AttendancePanel() {
 
   const filtered = logs.filter((item) => {
     const matchesSearch =
+      !search ||
       item.student_name?.toLowerCase().includes(search.toLowerCase()) ||
-      item.roll_number?.toLowerCase().includes(search.toLowerCase()) ||
-      item.route_number?.toLowerCase().includes(search.toLowerCase());
+      item.roll_number?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesRoute =
+      !filterRoute ||
+      item.route_number?.toLowerCase().includes(filterRoute.toLowerCase());
+
+    const matchesDestination =
+      !filterDestination ||
+      item.pickup_stop?.toLowerCase().includes(filterDestination.toLowerCase()) ||
+      item.department?.toLowerCase().includes(filterDestination.toLowerCase());
+
     const matchesDate = !filterDate || item.scan_date === filterDate;
-    return matchesSearch && matchesDate;
+    return matchesSearch && matchesRoute && matchesDestination && matchesDate;
   });
 
   // Export CSV Report for Parent Groups
@@ -870,35 +882,79 @@ function AttendancePanel() {
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
-        <div className="flex flex-1 flex-wrap items-center gap-3">
+      {/* Search & Route / Destination Filter Bar */}
+      <div className="space-y-3 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            placeholder="Search student name, roll 24BT04171, or route..."
+            placeholder="Search student name, roll 24BT04171..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="min-w-[240px] flex-1 rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-medium outline-none focus:border-primary"
+            className="min-w-[200px] flex-1 rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-medium outline-none focus:border-primary"
           />
+
+          {/* Select Bus Route Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Select Route:</span>
+            <select
+              value={filterRoute}
+              onChange={(e) => setFilterRoute(e.target.value)}
+              className="rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary cursor-pointer max-w-[180px]"
+            >
+              <option value="">All 13 Routes</option>
+              <option value="Route 1">Route 1 (Soma Talav)</option>
+              <option value="Route 2">Route 2 (Sama Savli)</option>
+              <option value="Route 3">Route 3 (Waghodia)</option>
+              <option value="Route 4">Route 4 (Maneja)</option>
+              <option value="Route 5">Route 5 (Gotri)</option>
+              <option value="Route 6">Route 6 (Subhanpura)</option>
+              <option value="Route 7">Route 7 (Alkapuri)</option>
+              <option value="Route 8">Route 8 (Old Padra)</option>
+              <option value="Route 9">Route 9 (Fatehgunj)</option>
+              <option value="Route 10">Route 10 (Manjalpur)</option>
+              <option value="Route 11">Route 11 (Karelibaug)</option>
+              <option value="Route 12">Route 12 (Gorwa)</option>
+              <option value="Route 13">Route 13 (Bajwa)</option>
+            </select>
+          </div>
+
+          {/* Destination / Stop Search Input */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-[220px]">
+            <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Destination / Stop:</span>
+            <input
+              type="text"
+              placeholder="Write destination / stop (e.g. GSFC Campus, Soma Talav)…"
+              value={filterDestination}
+              onChange={(e) => setFilterDestination(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-medium outline-none focus:border-primary"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">Filter Date:</span>
+            <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Date:</span>
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
               className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs outline-none"
             />
-            {filterDate && (
+            {(filterDate || filterRoute || filterDestination || search) && (
               <button
-                onClick={() => setFilterDate("")}
-                className="text-xs font-bold text-destructive hover:underline"
+                onClick={() => {
+                  setFilterDate("");
+                  setFilterRoute("");
+                  setFilterDestination("");
+                  setSearch("");
+                }}
+                className="text-xs font-bold text-destructive hover:underline whitespace-nowrap"
               >
-                Clear Date
+                Reset Filters
               </button>
             )}
           </div>
         </div>
-        <div className="text-xs font-bold text-muted-foreground font-mono">
+
+        <div className="text-right text-xs font-bold text-muted-foreground font-mono border-t border-border/40 pt-2">
           Showing {filtered.length} Scan Log Entries
         </div>
       </div>
