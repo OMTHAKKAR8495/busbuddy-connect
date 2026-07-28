@@ -202,9 +202,7 @@ export default function AppShell({
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
           <Link to="/app" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 transition group-hover:scale-105">
-              <Bus className="h-5 w-5" />
-            </div>
+            <img src="/gsfc-logo.png" alt="GSFC University Official Logo" className="h-9 w-auto object-contain rounded-md bg-white p-0.5 shadow-sm transition group-hover:scale-105" />
             <div>
               <div className="font-display text-sm sm:text-base font-bold leading-tight flex items-center gap-1.5">
                 {title}

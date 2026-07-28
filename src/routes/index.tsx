@@ -66,15 +66,13 @@ function Landing() {
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
-              <Bus className="h-5 w-5" />
-            </div>
+            <img src="/gsfc-logo.png" alt="GSFC University Official Logo" className="h-10 sm:h-12 w-auto object-contain rounded-md bg-white p-1 shadow-sm" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-display text-lg font-bold tracking-tight">GSFCU Transit</span>
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">v2.4</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Smart Campus Mobility System</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">GSFC University · Vadodara</p>
             </div>
           </div>
 

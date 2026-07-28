@@ -579,12 +579,15 @@ function DigitalPass({
 
         {/* Header Badge */}
         <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-white/10">
-          <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
-              <Sparkles className="h-3 w-3" /> GSFC UNIVERSITY VERIFIED BUS PASS
-            </div>
-            <div className="font-display text-xl font-extrabold mt-0.5">
-              Route {pass.routes?.route_number} · {pass.routes?.name}
+          <div className="flex items-center gap-3">
+            <img src="/gsfc-logo.png" alt="GSFC University Logo" className="h-10 w-auto object-contain bg-white rounded-md p-1 shadow-md" />
+            <div>
+              <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
+                <Sparkles className="h-3 w-3" /> GSFC UNIVERSITY VERIFIED BUS PASS
+              </div>
+              <div className="font-display text-xl font-extrabold mt-0.5">
+                Route {pass.routes?.route_number} · {pass.routes?.name}
+              </div>
             </div>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
