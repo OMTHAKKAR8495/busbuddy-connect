@@ -183,7 +183,13 @@ export default function AppShell({
               {allowedTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => onOverrideRole?.(overrideRole === tab.id ? null : (tab.id as never))}
+                  onClick={() => {
+                    if (tab.id === "admin") {
+                      window.location.href = "/admin";
+                    } else {
+                      onOverrideRole?.(overrideRole === tab.id ? null : (tab.id as never));
+                    }
+                  }}
                   className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
                     activeRoleLower.includes(tab.id)
                       ? "bg-primary text-primary-foreground shadow-sm"
