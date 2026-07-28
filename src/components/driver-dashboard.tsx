@@ -459,7 +459,7 @@ export default function DriverDashboard({
               <Send className="h-4 w-4 text-primary" /> Route Broadcast Dispatch
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Send an instant push update to all students tracking Route {activeTrip.routes?.route_number}.
+              Send an instant push update to all students tracking Route {currentShift?.routes?.route_number || "R1"}.
             </p>
 
             <div className="mt-4 flex gap-2">
