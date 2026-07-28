@@ -457,6 +457,22 @@ function Landing() {
         </div>
       </section>
 
+      {/* Official Footer */}
+      <footer className="border-t border-border/60 bg-muted/30 py-8 px-6 mt-12">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <img src="/gsfc-transit-app-logo.png" alt="GSFC Bus Transit Logo" className="h-8 w-auto rounded-lg" />
+            <div>
+              <div className="font-display font-bold text-sm text-foreground">GSFC BUS TRANSIT SYSTEM</div>
+              <p className="text-xs text-muted-foreground">GSFC University · Vigyan Bhavan, Vadodara, Gujarat 391750</p>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground font-mono">
+            © 2026 GSFC Bus Transit System. All Rights Reserved.
+          </div>
+        </div>
+      </footer>
+
       {/* App Store & Play Store Download Modal */}
       {showInstallModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">

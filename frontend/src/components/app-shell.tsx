@@ -252,7 +252,12 @@ export default function AppShell({
           </div>
         </div>
       ) : (
-        <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 pb-24 sm:pb-8 flex-1 w-full">{children}</main>
+        <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 pb-24 sm:pb-8 flex-1 w-full">
+          {children}
+          <footer className="mt-12 border-t border-border/60 pt-6 pb-4 text-center text-xs text-muted-foreground font-mono">
+            © 2026 GSFC Bus Transit System. All Rights Reserved.
+          </footer>
+        </main>
       )}
 
       {/* Native Physical Mobile Touch Navigation Bar */}
