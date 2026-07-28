@@ -44,20 +44,41 @@ export default function LiveMap({
     ? '&copy; <a href="https://maps.google.com">Google Maps</a>'
     : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
+  const safeRoutes = (routes || [])
+    .map((r) => ({
+      ...r,
+      polyline: (r?.polyline || []).filter(
+        (p) => Array.isArray(p) && p.length >= 2 && typeof p[0] === "number" && typeof p[1] === "number" && !isNaN(p[0]) && !isNaN(p[1])
+      ),
+    }))
+    .filter((r) => r.polyline.length > 0);
+
+  const safeBuses = (buses || []).filter(
+    (b) => b && typeof b.lat === "number" && typeof b.lng === "number" && !isNaN(b.lat) && !isNaN(b.lng)
+  );
+
+  const safeStops = (stops || []).filter(
+    (s) => s && typeof s.lat === "number" && typeof s.lng === "number" && !isNaN(s.lat) && !isNaN(s.lng)
+  );
+
+  const safeCenter: [number, number] = Array.isArray(center) && center.length >= 2 && typeof center[0] === "number" && typeof center[1] === "number"
+    ? center
+    : [22.3236, 73.1631];
+
   return (
     <div className="overflow-hidden rounded-xl border border-border" style={{ height }}>
-      <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
+      <MapContainer center={safeCenter} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
         <TileLayer attribution={tileAttribution} url={tileUrl} />
-        {routes.map((r, i) => (
+        {safeRoutes.map((r, i) => (
           <Polyline key={i} positions={r.polyline} pathOptions={{ color: r.color ?? "#1e40af", weight: 4, opacity: 0.7 }} />
         ))}
-        {stops.map((s, i) => (
+        {safeStops.map((s, i) => (
           <CircleMarker key={i} center={[s.lat, s.lng]} radius={6} pathOptions={{ color: "#1e40af", fillColor: "#fff", fillOpacity: 1, weight: 2 }}>
             <Popup>{s.name}</Popup>
           </CircleMarker>
         ))}
-        {buses.map((b) => (
-          <Marker key={b.bus_id} position={[b.lat, b.lng]} icon={busIcon}>
+        {safeBuses.map((b) => (
+          <Marker key={b.bus_id || Math.random().toString()} position={[b.lat, b.lng]} icon={busIcon}>
             <Popup>
               <div className="font-medium">{b.label}</div>
               {b.speed != null && <div className="text-xs">Speed: {Math.round(b.speed)} km/h</div>}

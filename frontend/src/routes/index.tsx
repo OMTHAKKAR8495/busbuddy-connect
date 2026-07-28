@@ -490,7 +490,18 @@ function Landing() {
                   </div>
                   <LiveMap
                     buses={liveBusesOnMap}
-                    routes={[{ polyline: activeRoute.stops.map(s => [s.lat, s.lng] as [number, number]), color: "#10b981" }]}
+                    routes={[
+                      {
+                        polyline: [
+                          [22.3655, 73.1815],
+                          [22.3712, 73.1865],
+                          [22.3801, 73.1932],
+                          [22.3910, 73.2015],
+                          [22.3980, 73.2090],
+                        ],
+                        color: "#10b981",
+                      },
+                    ]}
                     center={[liveBusesOnMap[0]?.lat || 22.3655, liveBusesOnMap[0]?.lng || 73.1815]}
                     zoom={13}
                     height={210}
