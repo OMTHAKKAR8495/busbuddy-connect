@@ -352,15 +352,6 @@ function Landing() {
               )}
             </button>
 
-            {/* Dedicated Admin Portal Link */}
-            <Link
-              to="/admin"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition"
-              title="Access Transport Admin HQ Security Portal"
-            >
-              <ShieldCheck className="h-4 w-4" /> Admin HQ
-            </Link>
-
             {/* Install Mobile App Button */}
             <button
               onClick={() => setShowInstallModal(true)}

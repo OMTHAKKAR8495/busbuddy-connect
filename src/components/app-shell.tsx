@@ -160,7 +160,6 @@ export default function AppShell({
   const allowedTabs = [
     { id: "student", label: "Student", emoji: "🎓", allowed: true },
     { id: "driver", label: "Driver", emoji: "🚌", allowed: isDriver || isAdmin },
-    { id: "admin", label: "Admin HQ", emoji: "🛡️", allowed: isAdmin },
     { id: "scanner", label: "QR Scanner", emoji: "🔍", allowed: true },
   ].filter((t) => t.allowed);
 
