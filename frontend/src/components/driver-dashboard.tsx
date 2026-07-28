@@ -21,6 +21,17 @@ import {
 
 type User = { userId: string; role: "driver"; profile: { full_name: string } };
 
+const OFFICIAL_DRIVERS = [
+  { id: "drv-101", name: "Suresh Kumar (Emp ID: GSFC-DRV-101)" },
+  { id: "drv-102", name: "Ramesh Patel (Emp ID: GSFC-DRV-102)" },
+  { id: "drv-103", name: "Mahesh Singh (Emp ID: GSFC-DRV-103)" },
+  { id: "drv-104", name: "Vikram Parmar (Emp ID: GSFC-DRV-104)" },
+  { id: "drv-105", name: "Ketan Solanki (Emp ID: GSFC-DRV-105)" },
+  { id: "drv-106", name: "Dinesh Varma (Emp ID: GSFC-DRV-106)" },
+  { id: "drv-107", name: "Prakash Jha (Emp ID: GSFC-DRV-107)" },
+  { id: "drv-108", name: "Bharat Thakor (Emp ID: GSFC-DRV-108)" },
+];
+
 export default function DriverDashboard({
   user,
   onOverrideRole,
@@ -56,6 +67,7 @@ export default function DriverDashboard({
   });
 
   const [selectedBus, setSelectedBus] = useState<string>("bus-01");
+  const [selectedDriver, setSelectedDriver] = useState<string>("Suresh Kumar (Emp ID: GSFC-DRV-101)");
   const [isShiftActive, setIsShiftActive] = useState(false);
   const [localActiveTrip, setLocalActiveTrip] = useState<any>(null);
   const [streaming, setStreaming] = useState(false);
@@ -115,6 +127,7 @@ export default function DriverDashboard({
       id: "trip-demo-active",
       bus_id: currentBusObj.id,
       route_id: currentBusObj.route_id || "route-01",
+      driver_name: selectedDriver,
       buses: { bus_number: currentBusObj.bus_number, plate: currentBusObj.plate },
       routes: currentBusObj.routes || { route_number: "R1", name: "Soma Talav (BPC Pump) → GSFC University" },
     };
@@ -136,6 +149,7 @@ export default function DriverDashboard({
       id: "trip-" + Date.now(),
       bus_id: bus.id,
       route_id: bus.route_id || "route-01",
+      driver_name: selectedDriver,
       buses: { bus_number: bus.bus_number, plate: bus.plate },
       routes: bus.routes || { route_number: "R1", name: "Soma Talav (BPC Pump) → GSFC University" },
     };
@@ -145,6 +159,19 @@ export default function DriverDashboard({
     setStreaming(true);
 
     try {
+      supabase.from("driver_shift_logs_july_2026").insert({
+        driver_name: selectedDriver,
+        bus_number: bus.bus_number,
+        bus_plate: bus.plate,
+        route_number: bus.routes?.route_number || "Route R1",
+        route_name: bus.routes?.name || "Soma Talav → GSFC Campus",
+        start_location: "Depot / Origin Stop",
+        shift_start_time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        shift_stop_time: "In Transit",
+        shift_day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+        month_year: "July 2026"
+      }).then(() => console.log("Driver shift log recorded in Supabase"));
+
       supabase.from("trips").insert({
         bus_id: bus.id,
         route_id: bus.route_id || "route-01",
@@ -155,7 +182,7 @@ export default function DriverDashboard({
       console.log("Trip start background push:", e);
     }
 
-    toast.success(`✓ Driver Shift Started on Route ${newShiftObj.routes.route_number}!`);
+    toast.success(`✓ Driver Shift Started: ${selectedDriver} on Route ${newShiftObj.routes.route_number}!`);
   }
 
   function endTrip() {
@@ -334,9 +361,26 @@ export default function DriverDashboard({
               </select>
             </div>
 
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Assigned Bus Driver Name & Emp ID
+              </label>
+              <select
+                value={selectedDriver}
+                onChange={(e) => setSelectedDriver(e.target.value)}
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                {OFFICIAL_DRIVERS.map((drv) => (
+                  <option key={drv.id} value={drv.name}>
+                    {drv.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={startTrip}
-              disabled={!selectedBus}
+              disabled={!selectedBus || !selectedDriver}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-50"
             >
               <Play className="h-4 w-4" /> Start Shift & Begin GPS Telemetry
@@ -361,6 +405,9 @@ export default function DriverDashboard({
                 <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight">
                   Bus {currentShift.buses?.bus_number} ({currentShift.buses?.plate})
                 </h2>
+                <div className="text-sm font-bold text-emerald-300 mt-1 flex items-center gap-1.5">
+                  <Users className="h-4 w-4" /> Assigned Driver: {currentShift.driver_name || selectedDriver}
+                </div>
                 <p className="text-sm opacity-90 font-medium mt-0.5">
                   Route {currentShift.routes?.route_number}: {currentShift.routes?.name}
                 </p>
