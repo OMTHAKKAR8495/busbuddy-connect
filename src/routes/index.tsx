@@ -258,8 +258,8 @@ function Landing() {
       {/* Main Navigation Header */}
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <img src="/gsfc-transit-app-logo.png" alt="GSFC Bus Transit System Logo" className="h-10 sm:h-12 w-auto object-contain rounded-xl shadow-md transition hover:scale-105" />
+          <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+            <img src="/gsfc-transit-app-logo.png" alt="GSFC Bus Transit System Logo" className="h-10 sm:h-12 w-auto object-contain rounded-xl shadow-md transition group-hover:scale-105" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-display text-lg font-bold tracking-tight">GSFCU Transit</span>
@@ -267,7 +267,7 @@ function Landing() {
               </div>
               <p className="text-[10px] text-muted-foreground font-semibold">GSFC University · Vadodara</p>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-3">
             {/* Install Mobile App Button */}
