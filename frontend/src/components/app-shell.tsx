@@ -208,7 +208,15 @@ export default function AppShell({
       {/* Main Header */}
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
-          <Link to="/" className="flex items-center gap-2.5 group" title="Return to Home Landing Page">
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = "/";
+            }}
+            className="flex items-center gap-2.5 group cursor-pointer"
+            title="Return to Home Landing Page"
+          >
             <img src="/gsfc-transit-app-logo.png" alt="GSFC Bus Transit System Logo" className="h-9 w-auto object-contain rounded-xl shadow-md transition group-hover:scale-105" />
             <div>
               <div className="font-display text-sm sm:text-base font-bold leading-tight flex items-center gap-1.5">
@@ -221,7 +229,7 @@ export default function AppShell({
                 <ShieldCheck className="h-3 w-3 text-primary" /> {overrideRole ? `Demo ${overrideRole}` : role} Console
               </div>
             </div>
-          </Link>
+          </a>
 
           <div className="flex items-center gap-2">
             {/* Light / Dark Theme Toggle Button */}
