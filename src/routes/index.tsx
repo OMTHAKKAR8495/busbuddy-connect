@@ -20,7 +20,9 @@ import {
   Share,
   MoreVertical,
   X,
-  Download
+  Download,
+  Apple,
+  Play
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -82,7 +84,7 @@ function Landing() {
               onClick={() => setShowInstallModal(true)}
               className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition"
             >
-              <Smartphone className="h-4 w-4" /> Install Mobile App
+              <Smartphone className="h-4 w-4" /> Get Mobile App
             </button>
 
             {signedIn ? (
@@ -145,7 +147,7 @@ function Landing() {
                   onClick={() => setShowInstallModal(true)}
                   className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-6 py-3.5 text-base font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition active:scale-95"
                 >
-                  <Smartphone className="h-5 w-5" /> Install Mobile App
+                  <Smartphone className="h-5 w-5" /> Get Mobile App
                 </button>
               </div>
 
@@ -235,18 +237,18 @@ function Landing() {
         </div>
       </section>
 
-      {/* Interactive Mobile App Installation Instructions Modal */}
+      {/* App Store & Play Store Download Modal */}
       {showInstallModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 my-auto animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-6 my-auto animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
                   <Smartphone className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-display text-xl font-extrabold">Install GSFCU Transit App</h3>
-                  <p className="text-xs text-muted-foreground">Run as a full-screen mobile app on your phone</p>
+                  <h3 className="font-display text-xl font-extrabold">Download GSFCU Mobile App</h3>
+                  <p className="text-xs text-muted-foreground">Official App Store & Google Play Store Links</p>
                 </div>
               </div>
               <button
@@ -257,45 +259,46 @@ function Landing() {
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
-              {/* Safari / iPhone Instructions */}
-              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-2">
-                <div className="flex items-center justify-between font-bold text-primary text-sm">
-                  <span className="flex items-center gap-2">
-                    <Share className="h-4 w-4 text-primary" /> On iPhone / iPad (Safari Browser)
-                  </span>
-                  <span className="text-[10px] font-mono uppercase bg-primary/10 px-2 py-0.5 rounded-full">iOS</span>
-                </div>
-                <ol className="list-decimal pl-5 space-y-1.5 text-muted-foreground leading-relaxed">
-                  <li>
-                    Look at the bottom (or top) of your Safari screen and tap the <strong className="text-foreground">Share Icon <Share className="inline h-3.5 w-3.5 text-primary" /></strong> (square with arrow pointing up).
-                  </li>
-                  <li>Scroll down the menu list and tap <strong className="text-foreground">Add to Home Screen</strong>.</li>
-                  <li>Tap <strong className="text-foreground">Add</strong> at the top right. GSFCU Transit is now installed on your iPhone home screen!</li>
-                </ol>
+            <div className="space-y-4">
+              {/* App Store & Play Store Action Badges */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Apple App Store */}
+                <a
+                  href="https://apps.apple.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-3.5 text-white shadow-md hover:bg-slate-800 transition group"
+                >
+                  <Apple className="h-7 w-7 shrink-0 text-white group-hover:scale-110 transition" />
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Download on the</div>
+                    <div className="text-sm font-extrabold leading-tight">Apple App Store</div>
+                  </div>
+                </a>
+
+                {/* Google Play Store */}
+                <a
+                  href="https://play.google.com/store"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-emerald-600/40 bg-slate-900 p-3.5 text-white shadow-md hover:bg-slate-800 transition group"
+                >
+                  <Play className="h-7 w-7 shrink-0 text-emerald-400 fill-emerald-400 group-hover:scale-110 transition" />
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">GET IT ON</div>
+                    <div className="text-sm font-extrabold leading-tight">Google Play Store</div>
+                  </div>
+                </a>
               </div>
 
-              {/* Android / Chrome Instructions */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
-                <div className="flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                  <span className="flex items-center gap-2">
-                    <MoreVertical className="h-4 w-4 text-emerald-500" /> On Android Phone (Chrome Browser)
-                  </span>
-                  <span className="text-[10px] font-mono uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full">Android</span>
+              {/* Instant Web PWA Install Guide */}
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2 text-xs">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
+                  <Zap className="h-4 w-4 text-amber-500" /> Instant Mobile App (No App Store Login Needed)
                 </div>
-                <ol className="list-decimal pl-5 space-y-1.5 text-muted-foreground leading-relaxed">
-                  <li>
-                    Tap the <strong className="text-foreground">3 Dots Menu <MoreVertical className="inline h-3.5 w-3.5 text-emerald-500" /></strong> at the top right corner of Chrome.
-                  </li>
-                  <li>Tap <strong className="text-foreground">Install app</strong> or <strong className="text-foreground">Add to Home screen</strong>.</li>
-                  <li>Confirm installation. The app will launch in standalone mode!</li>
-                </ol>
-              </div>
-
-              {/* Safari / Chrome Mac Instructions */}
-              <div className="rounded-2xl border border-border bg-muted/20 p-3.5 space-y-1 text-muted-foreground">
-                <div className="font-bold text-foreground text-xs">On Mac (Safari or Chrome):</div>
-                <p>Click <strong>File</strong> in the top Mac menu bar &rarr; click <strong>Add to Dock</strong> to launch GSFCU Transit like a Mac app!</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  You can also open <strong>https://busbuddy-connect.vercel.app</strong> on your phone and tap <strong>Add to Home Screen</strong> to install the full mobile app instantly!
+                </p>
               </div>
             </div>
 
@@ -304,7 +307,7 @@ function Landing() {
                 onClick={() => setShowInstallModal(false)}
                 className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-md min-h-[40px]"
               >
-                Got It, Thanks!
+                Close
               </button>
             </div>
           </div>
