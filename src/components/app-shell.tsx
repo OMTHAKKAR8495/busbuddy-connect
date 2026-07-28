@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Bus, LogOut, ShieldCheck, Award, CheckCircle2, X, FileText, Code2, QrCode, Smartphone, Monitor, Printer, DollarSign, Calendar } from "lucide-react";
+import { useState, useEffect, type ReactNode } from "react";
+import { Bus, LogOut, ShieldCheck, Award, CheckCircle2, X, FileText, Code2, QrCode, Smartphone, Monitor, Printer, DollarSign, Calendar, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,26 @@ export default function AppShell({
   const qc = useQueryClient();
   const [showSpecModal, setShowSpecModal] = useState(false);
   const [mobileSimulated, setMobileSimulated] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark") || localStorage.getItem("theme") !== "light";
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => !prev);
+  };
 
   async function signOut() {
     await qc.cancelQueries();
@@ -204,6 +224,25 @@ export default function AppShell({
           </Link>
 
           <div className="flex items-center gap-2">
+            {/* Light / Dark Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-muted active:scale-95 min-h-[36px]"
+              title="Toggle Light / Dark Mode Theme"
+            >
+              {isDark ? (
+                <>
+                  <Sun className="h-4 w-4 text-amber-400 fill-amber-400" />
+                  <span className="hidden sm:inline text-xs font-semibold">Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-4 w-4 text-indigo-500 fill-indigo-500" />
+                  <span className="hidden sm:inline text-xs font-semibold">Dark Mode</span>
+                </>
+              )}
+            </button>
+
             <button
               onClick={() => onOverrideRole?.(activeRoleLower.includes("scanner") ? null : "scanner")}
               className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition"

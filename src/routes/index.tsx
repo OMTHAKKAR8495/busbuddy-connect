@@ -23,7 +23,9 @@ import {
   Download,
   Apple,
   Play,
-  Route as RouteIcon
+  Route as RouteIcon,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -233,6 +235,24 @@ function Landing() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showAllRoutesModal, setShowAllRoutesModal] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("route-2");
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark") || localStorage.getItem("theme") !== "light";
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark((prev) => !prev);
 
   const activeRoute = ALL_13_ROUTES.find((r) => r.id === selectedRouteId) || ALL_13_ROUTES[1];
 
@@ -270,6 +290,25 @@ function Landing() {
           </Link>
 
           <div className="flex items-center gap-3">
+            {/* Light / Dark Mode Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-bold text-foreground transition hover:bg-muted active:scale-95 min-h-[36px]"
+              title="Toggle Light / Dark Mode Theme"
+            >
+              {isDark ? (
+                <>
+                  <Sun className="h-4 w-4 text-amber-400 fill-amber-400" />
+                  <span className="hidden sm:inline font-semibold">Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-4 w-4 text-indigo-500 fill-indigo-500" />
+                  <span className="hidden sm:inline font-semibold">Dark Mode</span>
+                </>
+              )}
+            </button>
+
             {/* Install Mobile App Button */}
             <button
               onClick={() => setShowInstallModal(true)}
