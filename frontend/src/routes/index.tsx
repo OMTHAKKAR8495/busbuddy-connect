@@ -236,6 +236,7 @@ function Landing() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showAllRoutesModal, setShowAllRoutesModal] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("route-2");
+
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return document.documentElement.classList.contains("dark") || localStorage.getItem("theme") !== "light";
@@ -722,6 +723,90 @@ function Landing() {
                 Close Network View
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* \ud83d\udd10 SECRET ADMIN ACCESS MODAL (appears after 7 logo taps) */}
+      {showSecretAdminModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowSecretAdminModal(false); setSecretAdminPassword(""); setSecretAdminError(false); }}}
+        >
+          <div className="w-full max-w-sm rounded-3xl border border-primary/30 bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="font-bold text-base">Transport Admin Access</div>
+                <div className="text-xs text-muted-foreground">Enter your admin password to continue</div>
+              </div>
+              <button
+                onClick={() => { setShowSecretAdminModal(false); setSecretAdminPassword(""); setSecretAdminError(false); }}
+                className="ml-auto rounded-xl p-2 text-muted-foreground hover:bg-muted transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-primary/5 border border-primary/20 px-4 py-2.5 text-xs text-primary font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+              This hidden access is for Transport Admin only. All attempts are logged.
+            </div>
+
+            <form onSubmit={handleSecretAdminLogin} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Admin Security Password</label>
+                <div className="relative">
+                  <input
+                    type={secretShowPass ? "text" : "password"}
+                    value={secretAdminPassword}
+                    onChange={(e) => { setSecretAdminPassword(e.target.value); setSecretAdminError(false); }}
+                    placeholder="Enter admin password…"
+                    className={`w-full rounded-2xl border ${secretAdminError ? "border-red-500 bg-red-500/5" : "border-input bg-background"} pr-12 px-4 py-2.5 text-sm font-mono outline-none focus:border-primary transition`}
+                    autoFocus
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSecretShowPass((v) => !v)}
+                    className="absolute right-3.5 top-3 text-muted-foreground hover:text-foreground transition"
+                    tabIndex={-1}
+                  >
+                    {secretShowPass
+                      ? <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    }
+                  </button>
+                </div>
+                {secretAdminError && (
+                  <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Incorrect password. Access denied.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setShowSecretAdminModal(false); setSecretAdminPassword(""); setSecretAdminError(false); }}
+                  className="flex-1 rounded-2xl border border-border py-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-2xl bg-primary py-2.5 text-sm font-bold text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/25 transition active:scale-95"
+                >
+                  🔓 Enter Admin HQ
+                </button>
+              </div>
+            </form>
+
+            <p className="text-center text-[10px] text-muted-foreground font-mono">
+              Hint: Tap the logo 7 times from any screen to open this panel
+            </p>
           </div>
         </div>
       )}
