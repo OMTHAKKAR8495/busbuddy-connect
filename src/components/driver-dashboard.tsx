@@ -88,6 +88,7 @@ export default function DriverDashboard({
   const [showMsgModal, setShowMsgModal] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [shiftSeconds, setShiftSeconds] = useState(0);
+  const [showForceStopConfirm, setShowForceStopConfirm] = useState(false);
 
   const watchIdRef = useRef<number | null>(null);
   const simTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -575,7 +576,7 @@ export default function DriverDashboard({
             </div>
           </div>
 
-          {/* Controls & Action Buttons */}
+          {/* Active Shift Controls */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {!streaming ? (
               <button
@@ -624,6 +625,29 @@ export default function DriverDashboard({
             </button>
           </div>
 
+          {/* ⚠️ Forgot to Stop — Force Stop Warning Banner */}
+          {shiftSeconds > 10 && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-amber-700 dark:text-amber-300 text-sm">Forgot to Stop Your Trip?</div>
+                  <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+                    Your shift has been active for <span className="font-bold font-mono">{formatShiftTime(shiftSeconds)}</span>. If your route is complete, use the Force Stop button to end GPS tracking immediately and log your stop time in Admin HQ.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowForceStopConfirm(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-600 shadow-lg shadow-amber-500/25 transition active:scale-95 whitespace-nowrap"
+              >
+                <StopCircle className="h-4 w-4" /> Force Stop Trip Now
+              </button>
+            </div>
+          )}
+
           {/* Broadcast Custom Message Action */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h3 className="font-display font-bold text-base flex items-center gap-2">
@@ -651,13 +675,67 @@ export default function DriverDashboard({
             </div>
           </div>
 
-          {/* End Shift */}
+          {/* End Shift Button */}
           <button
-            onClick={endTrip}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-card py-4 text-sm font-bold text-red-600 hover:bg-red-500 hover:text-white transition shadow-sm"
+            onClick={() => setShowForceStopConfirm(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500/60 bg-card py-4 text-sm font-bold text-red-600 hover:bg-red-500 hover:text-white transition shadow-sm"
           >
             <StopCircle className="h-5 w-5" /> Complete Shift & Stop Tracking
           </button>
+        </div>
+      )}
+
+      {/* ✅ Force Stop Confirmation Modal */}
+      {showForceStopConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 text-red-500">
+                <StopCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="font-bold text-base text-foreground">Stop Trip Confirmation</div>
+                <div className="text-xs text-muted-foreground mt-0.5">This will end GPS tracking and log your stop time</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-muted/50 border border-border/60 p-4 space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shift Duration</span>
+                <span className="font-bold text-foreground">{formatShiftTime(shiftSeconds)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Stop Time</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Route</span>
+                <span className="font-bold">{currentShift?.routes?.route_number || "R1"}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Your stop time will be logged live in <strong>Admin HQ Driver Shift Logs</strong>. GPS pings will stop immediately.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowForceStopConfirm(false)}
+                className="flex-1 rounded-xl border border-border py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowForceStopConfirm(false);
+                  endTrip();
+                }}
+                className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 shadow-lg shadow-red-600/25 transition active:scale-95"
+              >
+                ✅ Yes, Stop Trip
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </AppShell>

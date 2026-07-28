@@ -1,10 +1,13 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMyRole } from "@/hooks/use-role";
 import StudentDashboard from "@/components/student-dashboard";
 import DriverDashboard from "@/components/driver-dashboard";
-import AdminDashboard from "@/components/admin-dashboard";
 import ConductorScannerPage from "@/components/conductor-scanner";
+
+// NOTE: AdminDashboard is intentionally NOT imported here.
+// Admin access is exclusively through /admin URL with passcode authentication.
+// Students cannot reach AdminDashboard via this route under any circumstances.
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppRouter,
@@ -12,7 +15,11 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function AppRouter() {
   const { data } = useMyRole();
-  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "admin" | "scanner" | null>(null);
+
+  // ⛔ SECURITY: Override role is restricted — "admin" override is completely blocked.
+  // Students and drivers can only switch between "student", "driver", and "scanner" views.
+  // Admin access is exclusively via /admin URL with passcode.
+  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "scanner" | null>(null);
 
   const fallbackUser = {
     userId: "eval-om-thakkar",
@@ -22,36 +29,43 @@ function AppRouter() {
 
   const userObj = data || fallbackUser;
   const u = userObj as never;
-  const activeRole = overrideRole ?? userObj.role;
 
-  if (activeRole === "scanner" as never)
+  // ⛔ SECURITY GATE: Intercept any attempt to set admin role via override
+  const handleSetOverrideRole = (role: "student" | "driver" | "admin" | "scanner" | null) => {
+    if (role === "admin") {
+      // Silently redirect to /admin passcode gate instead of granting access inline
+      window.location.href = "/admin";
+      return;
+    }
+    setOverrideRole(role as "student" | "driver" | "scanner" | null);
+  };
+
+  // Determine effective role — admin override is always blocked here
+  const dbRole = userObj.role?.toLowerCase() ?? "student";
+  const activeRole = overrideRole ?? (dbRole === "admin" ? "student" : dbRole); // DB admins viewing /app see student view
+
+  if (activeRole === "scanner")
     return (
       <ConductorScannerPage
-        onOverrideRole={setOverrideRole as never}
+        onOverrideRole={handleSetOverrideRole as never}
         overrideRole={overrideRole as never}
       />
     );
 
-  if (activeRole === "admin")
-    return (
-      <AdminDashboard
-        user={{ ...u, role: "admin" }}
-        onOverrideRole={setOverrideRole as never}
-        overrideRole={overrideRole as never}
-      />
-    );
   if (activeRole === "driver")
     return (
       <DriverDashboard
         user={{ ...u, role: "driver" }}
-        onOverrideRole={setOverrideRole as never}
+        onOverrideRole={handleSetOverrideRole as never}
         overrideRole={overrideRole as never}
       />
     );
+
+  // ⛔ Default: ALL users on /app see Student Dashboard — never Admin
   return (
     <StudentDashboard
       user={{ ...u, role: "student" }}
-      onOverrideRole={setOverrideRole as never}
+      onOverrideRole={handleSetOverrideRole as never}
       overrideRole={overrideRole as never}
     />
   );
