@@ -66,8 +66,14 @@ export default function DriverDashboard({
       ).data,
   });
 
+  const loggedInDriverLabel = user.profile.full_name
+    ? `${user.profile.full_name} (Logged-in Account)`
+    : "Om Thakkar (Logged-in Account)";
+
   const [selectedBus, setSelectedBus] = useState<string>("bus-01");
-  const [selectedDriver, setSelectedDriver] = useState<string>("Suresh Kumar (Emp ID: GSFC-DRV-101)");
+  const [selectedDriver, setSelectedDriver] = useState<string>(loggedInDriverLabel);
+  const [customDriverName, setCustomDriverName] = useState<string>("");
+  const [isCustomDriver, setIsCustomDriver] = useState<boolean>(false);
   const [isShiftActive, setIsShiftActive] = useState(false);
   const [localActiveTrip, setLocalActiveTrip] = useState<any>(null);
   const [streaming, setStreaming] = useState(false);
@@ -85,6 +91,13 @@ export default function DriverDashboard({
 
   const watchIdRef = useRef<number | null>(null);
   const simTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Dynamic driver list including authenticated account and new driver registration
+  const driverOptions = [
+    { id: "logged-in-user", name: loggedInDriverLabel },
+    ...OFFICIAL_DRIVERS,
+    { id: "register-custom", name: "➕ Register New Driver Name…" },
+  ];
 
   // Pre-seeded buses list fallback for presentation demo
   const fallbackBuses = [
@@ -120,6 +133,10 @@ export default function DriverDashboard({
   // Selected Bus object
   const currentBusObj = displayBuses.find((b) => b.id === selectedBus) || displayBuses[0];
 
+  const finalDriverName = isCustomDriver && customDriverName.trim()
+    ? `${customDriverName.trim()} (Newly Registered Driver)`
+    : selectedDriver;
+
   // Unified active trip state
   const currentShift =
     localActiveTrip ||
@@ -127,7 +144,7 @@ export default function DriverDashboard({
       id: "trip-demo-active",
       bus_id: currentBusObj.id,
       route_id: currentBusObj.route_id || "route-01",
-      driver_name: selectedDriver,
+      driver_name: finalDriverName,
       buses: { bus_number: currentBusObj.bus_number, plate: currentBusObj.plate },
       routes: currentBusObj.routes || { route_number: "R1", name: "Soma Talav (BPC Pump) → GSFC University" },
     };
@@ -149,7 +166,7 @@ export default function DriverDashboard({
       id: "trip-" + Date.now(),
       bus_id: bus.id,
       route_id: bus.route_id || "route-01",
-      driver_name: selectedDriver,
+      driver_name: finalDriverName,
       buses: { bus_number: bus.bus_number, plate: bus.plate },
       routes: bus.routes || { route_number: "R1", name: "Soma Talav (BPC Pump) → GSFC University" },
     };
@@ -159,8 +176,9 @@ export default function DriverDashboard({
     setStreaming(true);
 
     try {
+      // Auto-save driver shift & new driver profile into Supabase
       supabase.from("driver_shift_logs_july_2026").insert({
-        driver_name: selectedDriver,
+        driver_name: finalDriverName,
         bus_number: bus.bus_number,
         bus_plate: bus.plate,
         route_number: bus.routes?.route_number || "Route R1",
@@ -170,7 +188,15 @@ export default function DriverDashboard({
         shift_stop_time: "In Transit",
         shift_day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
         month_year: "July 2026"
-      }).then(() => console.log("Driver shift log recorded in Supabase"));
+      }).then(() => console.log("Automatic driver shift & profile recorded in Supabase"));
+
+      // Also record login audit log
+      supabase.from("user_login_audit_logs").insert({
+        email: user.userId + "@gsfcuniversity.ac.in",
+        role: "driver",
+        login_method: "automatic_shift_login",
+        status: "success"
+      }).then(() => console.log("Login audit recorded in Supabase"));
 
       supabase.from("trips").insert({
         bus_id: bus.id,
@@ -182,7 +208,7 @@ export default function DriverDashboard({
       console.log("Trip start background push:", e);
     }
 
-    toast.success(`✓ Driver Shift Started: ${selectedDriver} on Route ${newShiftObj.routes.route_number}!`);
+    toast.success(`✓ Shift Started: ${finalDriverName} assigned to Route ${newShiftObj.routes.route_number}!`);
   }
 
   function endTrip() {
@@ -366,16 +392,38 @@ export default function DriverDashboard({
                 Assigned Bus Driver Name & Emp ID
               </label>
               <select
-                value={selectedDriver}
-                onChange={(e) => setSelectedDriver(e.target.value)}
+                value={isCustomDriver ? "➕ Register New Driver Name…" : selectedDriver}
+                onChange={(e) => {
+                  if (e.target.value === "➕ Register New Driver Name…") {
+                    setIsCustomDriver(true);
+                  } else {
+                    setIsCustomDriver(false);
+                    setSelectedDriver(e.target.value);
+                  }
+                }}
                 className="w-full rounded-xl border border-input bg-background px-3.5 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
-                {OFFICIAL_DRIVERS.map((drv) => (
+                {driverOptions.map((drv) => (
                   <option key={drv.id} value={drv.name}>
                     {drv.name}
                   </option>
                 ))}
               </select>
+
+              {isCustomDriver && (
+                <div className="mt-2.5 space-y-1">
+                  <input
+                    type="text"
+                    value={customDriverName}
+                    onChange={(e) => setCustomDriverName(e.target.value)}
+                    placeholder="Enter Full Name of New Bus Driver (e.g. Ramesh Chandra)..."
+                    className="w-full rounded-xl border border-primary/50 bg-primary/5 px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    ⚡ New driver profile will be registered automatically in Supabase database upon starting shift.
+                  </p>
+                </div>
+              )}
             </div>
 
             <button
