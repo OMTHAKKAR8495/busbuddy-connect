@@ -252,6 +252,37 @@ export default function ConductorScannerPage({
     };
   }, []);
 
+  // Save scan record for student attendance CSV report generation
+  function saveAuditLogToStorage(res: PassVerificationResult) {
+    try {
+      const existing = JSON.parse(localStorage.getItem("gsfcu_scan_audit_logs") || "[]");
+      const d = new Date();
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      
+      const entry = {
+        id: "scan-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+        student_name: res.student.name,
+        roll_number: res.student.rollNumber,
+        department: res.student.department,
+        route_number: res.pass.routeNumber,
+        pickup_stop: res.pass.pickupStop,
+        fee_status: res.pass.feeStatus,
+        status: res.isValid ? "Boarded (Valid Pass)" : "Entry Denied",
+        scanned_at: d.toISOString(),
+        scan_date: d.toISOString().split("T")[0],
+        scan_time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        scan_day: days[d.getDay()],
+        month_year: `${months[d.getMonth()]} ${d.getFullYear()}`
+      };
+
+      const updated = [entry, ...existing];
+      localStorage.setItem("gsfcu_scan_audit_logs", JSON.stringify(updated));
+    } catch (e) {
+      console.error("Failed to save scan audit log:", e);
+    }
+  }
+
   // Process and verify scanned pass payload
   function processScan(payloadString: string, demoPreset?: (typeof DEMO_STUDENT_PASSES)[0]["data"]) {
     stopPhoneCamera();
@@ -265,6 +296,7 @@ export default function ConductorScannerPage({
       };
       setScanResult(res);
       setHistory((prev) => [res, ...prev.slice(0, 9)]);
+      saveAuditLogToStorage(res);
 
       if (res.isValid) {
         toast.success(`✓ PASS VERIFIED: Welcome aboard, ${res.student.name}!`);
@@ -301,6 +333,7 @@ export default function ConductorScannerPage({
         };
         setScanResult(res);
         setHistory((prev) => [res, ...prev.slice(0, 9)]);
+        saveAuditLogToStorage(res);
         toast.success(`✓ PASS VERIFIED: Welcome, ${res.student.name}!`);
         playBeep(true);
       } else {
@@ -330,6 +363,7 @@ export default function ConductorScannerPage({
       };
       setScanResult(res);
       setHistory((prev) => [res, ...prev.slice(0, 9)]);
+      saveAuditLogToStorage(res);
       toast.success(`✓ QR CODE DECODED & PASS VERIFIED!`);
       playBeep(true);
     }

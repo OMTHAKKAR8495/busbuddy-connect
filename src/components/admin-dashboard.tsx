@@ -37,7 +37,7 @@ export default function AdminDashboard({
   onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
   overrideRole?: "student" | "driver" | "admin" | null;
 }) {
-  const [tab, setTab] = useState<"fleet" | "passes" | "routes" | "analytics">("fleet");
+  const [tab, setTab] = useState<"fleet" | "passes" | "routes" | "analytics" | "attendance">("fleet");
 
   return (
     <AppShell
@@ -46,12 +46,13 @@ export default function AdminDashboard({
       onOverrideRole={onOverrideRole}
       overrideRole={overrideRole}
     >
-      <div className="mb-6 flex gap-2 rounded-xl bg-muted p-1.5 border border-border/60">
+      <div className="mb-6 flex gap-2 rounded-xl bg-muted p-1.5 border border-border/60 overflow-x-auto">
         {[
           { k: "fleet", l: "Fleet Command Map", i: Activity },
           { k: "passes", l: "Pass & Fee Management", i: Users },
           { k: "routes", l: "Route & Stop Manager", i: RouteIcon },
-          { k: "analytics", l: "Fleet Analytics & Speed Logs", i: BarChart3 },
+          { k: "attendance", l: "Student Attendance & CSV", i: FileCheck },
+          { k: "analytics", l: "Fleet Analytics", i: BarChart3 },
         ].map((t) => (
           <button
             key={t.k}
@@ -68,6 +69,7 @@ export default function AdminDashboard({
       {tab === "fleet" && <FleetTab />}
       {tab === "passes" && <PassesTab />}
       {tab === "routes" && <RoutesTab />}
+      {tab === "attendance" && <AttendancePanel />}
       {tab === "analytics" && <AnalyticsTab />}
     </AppShell>
   );
@@ -651,3 +653,291 @@ function AnalyticsTab() {
     </div>
   );
 }
+
+// Student Bus Attendance & Parent CSV Report Export Center
+function AttendancePanel() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterMonth, setFilterMonth] = useState("July 2026");
+
+  // Load audit logs from localStorage or seed initial realistic July 2026 attendance data
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("gsfcu_scan_audit_logs") || "[]");
+      if (stored.length > 0) {
+        setLogs(stored);
+      } else {
+        // Pre-seeded Date-to-Date & Day-to-Day realistic logs for demonstration
+        const seedLogs = [
+          {
+            id: "scan-101",
+            student_name: "Om Thakkar",
+            roll_number: "24BT04171",
+            department: "Computer Science & Engineering",
+            route_number: "Route 1",
+            pickup_stop: "Soma Talav (BPC Pump)",
+            fee_status: "Verified Paid",
+            status: "Boarded (Valid Pass)",
+            scanned_at: "2026-07-28T08:14:22.000Z",
+            scan_date: "2026-07-28",
+            scan_time: "08:14 AM",
+            scan_day: "Tuesday",
+            month_year: "July 2026",
+          },
+          {
+            id: "scan-102",
+            student_name: "Om Thakkar",
+            roll_number: "24BT04171",
+            department: "Computer Science & Engineering",
+            route_number: "Route 1",
+            pickup_stop: "Soma Talav (BPC Pump)",
+            fee_status: "Verified Paid",
+            status: "Boarded (Valid Pass)",
+            scanned_at: "2026-07-27T08:12:05.000Z",
+            scan_date: "2026-07-27",
+            scan_time: "08:12 AM",
+            scan_day: "Monday",
+            month_year: "July 2026",
+          },
+          {
+            id: "scan-103",
+            student_name: "Alex Sharma",
+            roll_number: "22CS089",
+            department: "Chemical Engineering",
+            route_number: "Route 2",
+            pickup_stop: "Sama Savli Circle",
+            fee_status: "Verified Paid",
+            status: "Boarded (Valid Pass)",
+            scanned_at: "2026-07-28T07:55:10.000Z",
+            scan_date: "2026-07-28",
+            scan_time: "07:55 AM",
+            scan_day: "Tuesday",
+            month_year: "July 2026",
+          },
+          {
+            id: "scan-104",
+            student_name: "Priya Patel",
+            roll_number: "23EC102",
+            department: "Electrical Engineering",
+            route_number: "Route 3",
+            pickup_stop: "Waghodia Road",
+            fee_status: "Verified Paid",
+            status: "Boarded (Valid Pass)",
+            scanned_at: "2026-07-28T08:02:18.000Z",
+            scan_date: "2026-07-28",
+            scan_time: "08:02 AM",
+            scan_day: "Tuesday",
+            month_year: "July 2026",
+          },
+          {
+            id: "scan-105",
+            student_name: "Om Thakkar",
+            roll_number: "24BT04171",
+            department: "Computer Science & Engineering",
+            route_number: "Route 1",
+            pickup_stop: "Soma Talav (BPC Pump)",
+            fee_status: "Verified Paid",
+            status: "Boarded (Valid Pass)",
+            scanned_at: "2026-07-24T08:15:30.000Z",
+            scan_date: "2026-07-24",
+            scan_time: "08:15 AM",
+            scan_day: "Friday",
+            month_year: "July 2026",
+          },
+          {
+            id: "scan-106",
+            student_name: "Rohan Varma",
+            roll_number: "24ME055",
+            department: "Mechanical Engineering",
+            route_number: "Route 6",
+            pickup_stop: "Subhanpura",
+            fee_status: "Verified Paid",
+            status: "Boarded (Valid Pass)",
+            scanned_at: "2026-07-27T08:20:00.000Z",
+            scan_date: "2026-07-27",
+            scan_time: "08:20 AM",
+            scan_day: "Monday",
+            month_year: "July 2026",
+          },
+        ];
+        setLogs(seedLogs);
+        localStorage.setItem("gsfcu_scan_audit_logs", JSON.stringify(seedLogs));
+      }
+    } catch (e) {
+      console.error("Failed to load audit logs:", e);
+    }
+  }, []);
+
+  const filtered = logs.filter((item) => {
+    const matchesSearch =
+      item.student_name?.toLowerCase().includes(search.toLowerCase()) ||
+      item.roll_number?.toLowerCase().includes(search.toLowerCase()) ||
+      item.route_number?.toLowerCase().includes(search.toLowerCase());
+    const matchesDate = !filterDate || item.scan_date === filterDate;
+    return matchesSearch && matchesDate;
+  });
+
+  // Export CSV Report for Parent Groups
+  function exportParentCSV() {
+    if (filtered.length === 0) return toast.error("No scan records found to export.");
+
+    const headers = [
+      "Student Name",
+      "Roll Number",
+      "Department",
+      "Route Number",
+      "Pickup Stop",
+      "Scan Date (YYYY-MM-DD)",
+      "Day of Week",
+      "Scan Time",
+      "Boarding Status",
+      "Fee Verification Status",
+    ];
+
+    const rows = filtered.map((l) => [
+      `"${l.student_name}"`,
+      `"${l.roll_number}"`,
+      `"${l.department}"`,
+      `"${l.route_number}"`,
+      `"${l.pickup_stop}"`,
+      `"${l.scan_date}"`,
+      `"${l.scan_day}"`,
+      `"${l.scan_time}"`,
+      `"${l.status}"`,
+      `"${l.fee_status}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `GSFCU_Student_Bus_Attendance_Report_${filterMonth.replace(" ", "_")}_${Date.now()}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success("✓ Parent CSV Attendance Report exported successfully!");
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header Banner */}
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/10 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
+              GATE CONDUCTOR SCAN AUDIT & PARENT NOTIFICATIONS
+            </span>
+            <h2 className="font-display text-2xl font-extrabold mt-1">Student Bus Boarding Attendance Logs</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Date-to-Date & Day-to-Day boarding history logged at campus gate terminals for parent verification.
+            </p>
+          </div>
+          <button
+            onClick={exportParentCSV}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-xs font-bold text-white shadow-lg transition active:scale-95"
+          >
+            <FileCheck className="h-4 w-4" /> Export CSV for Parents
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div className="flex flex-1 flex-wrap items-center gap-3">
+          <input
+            type="text"
+            placeholder="Search student name, roll 24BT04171, or route..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="min-w-[240px] flex-1 rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-medium outline-none focus:border-primary"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground">Filter Date:</span>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs outline-none"
+            />
+            {filterDate && (
+              <button
+                onClick={() => setFilterDate("")}
+                className="text-xs font-bold text-destructive hover:underline"
+              >
+                Clear Date
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="text-xs font-bold text-muted-foreground font-mono">
+          Showing {filtered.length} Scan Log Entries
+        </div>
+      </div>
+
+      {/* Attendance Log Table */}
+      <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-sans border-collapse">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground">
+                <th className="p-3.5">Scan Date & Day</th>
+                <th className="p-3.5">Student Name</th>
+                <th className="p-3.5">Roll Number</th>
+                <th className="p-3.5">Route</th>
+                <th className="p-3.5">Pickup Stop</th>
+                <th className="p-3.5">Scan Time</th>
+                <th className="p-3.5">Boarding Status</th>
+                <th className="p-3.5">Fee Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                    No scan attendance logs found for the selected criteria.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((log) => (
+                  <tr key={log.id} className="hover:bg-muted/20 transition font-mono">
+                    <td className="p-3.5">
+                      <div className="font-bold text-foreground">{log.scan_date}</div>
+                      <div className="text-[10px] text-primary font-semibold">{log.scan_day}</div>
+                    </td>
+                    <td className="p-3.5 font-bold font-sans text-foreground text-sm">{log.student_name}</td>
+                    <td className="p-3.5 text-emerald-600 dark:text-emerald-400 font-bold">{log.roll_number}</td>
+                    <td className="p-3.5 font-bold">{log.route_number}</td>
+                    <td className="p-3.5 text-muted-foreground">{log.pickup_stop}</td>
+                    <td className="p-3.5 text-slate-600 dark:text-slate-300 font-semibold">{log.scan_time}</td>
+                    <td className="p-3.5">
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          log.status.includes("Boarded")
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                            : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                        }`}
+                      >
+                        {log.status}
+                      </span>
+                    </td>
+                    <td className="p-3.5">
+                      <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                        {log.fee_status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
