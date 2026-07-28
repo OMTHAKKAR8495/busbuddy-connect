@@ -22,9 +22,198 @@ import {
   X,
   Download,
   Apple,
-  Play
+  Play,
+  Route as RouteIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+const ALL_13_ROUTES = [
+  {
+    id: "route-1",
+    number: "Route R1",
+    name: "Soma Talav → Tarsali → GSFC Campus",
+    start: "Soma Talav (BPC Pump)",
+    bus: "Bus #01 (GJ-06-AX-1001)",
+    speed: "42 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Soma Talav (BPC Pump)", time: "07:30 AM" },
+      { name: "Tarsali Bypass", time: "07:40 AM" },
+      { name: "Makarpura Bus Depot", time: "07:50 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-2",
+    number: "Route R2",
+    name: "Sama Savli Road → GSFCU Main Campus",
+    start: "Sama Savli Circle",
+    bus: "Active Shuttle #04",
+    speed: "38 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Sama Cross Roads", time: "07:45 AM" },
+      { name: "Sama Savli Circle", time: "07:55 AM" },
+      { name: "Nizampura Junction", time: "08:05 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-3",
+    number: "Route R3",
+    name: "Waghodia Road → Parul Boundary → GSFC Campus",
+    start: "Waghodia Road",
+    bus: "Bus #03 (GJ-06-AX-1003)",
+    speed: "35 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Waghodia Road Cross Roads", time: "07:25 AM" },
+      { name: "Parul Boundary", time: "07:40 AM" },
+      { name: "Ajwa Road Crossing", time: "07:55 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-4",
+    number: "Route R4",
+    name: "Maneja → Makarpura GIDC → GSFC Campus",
+    start: "Maneja Crossing",
+    bus: "Bus #02 (GJ-06-AX-1002)",
+    speed: "40 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Maneja Railway Crossing", time: "07:30 AM" },
+      { name: "Makarpura GIDC Gate", time: "07:45 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-5",
+    number: "Route R5",
+    name: "Gotri Road → Sevasi → GSFC Campus",
+    start: "Gotri Road",
+    bus: "Bus #05 (GJ-06-AX-1005)",
+    speed: "36 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Gotri Water Tank", time: "07:40 AM" },
+      { name: "Sevasi Canal Road", time: "07:55 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-6",
+    number: "Route R6",
+    name: "Subhanpura → High Tanki → GSFC Campus",
+    start: "Subhanpura",
+    bus: "Bus #06 (GJ-06-AX-1006)",
+    speed: "34 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Subhanpura High Tanki", time: "07:50 AM" },
+      { name: "Ellora Park", time: "08:00 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-7",
+    number: "Route R7",
+    name: "Akota Stadium → OP Road → GSFC Campus",
+    start: "Akota Stadium",
+    bus: "Bus #07 (GJ-06-AX-1007)",
+    speed: "39 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Akota Stadium Circle", time: "07:35 AM" },
+      { name: "Old Padra Road", time: "07:50 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-8",
+    number: "Route R8",
+    name: "Alkapuri → Station Circle → GSFC Campus",
+    start: "Alkapuri Station",
+    bus: "Bus #08 (GJ-06-AX-1008)",
+    speed: "37 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Alkapuri Railway Station", time: "07:45 AM" },
+      { name: "Fatehgunj Circle", time: "07:55 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-9",
+    number: "Route R9",
+    name: "Karelibaug → Muktanand → GSFC Campus",
+    start: "Karelibaug",
+    bus: "Bus #09 (GJ-06-AX-1009)",
+    speed: "41 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Karelibaug Water Tank", time: "07:40 AM" },
+      { name: "Muktanand Circle", time: "07:50 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-10",
+    number: "Route R10",
+    name: "Gorwa BIDC → ITI Circle → GSFC Campus",
+    start: "Gorwa BIDC",
+    bus: "Bus #10 (GJ-06-AX-1010)",
+    speed: "33 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Gorwa BIDC Main Gate", time: "07:50 AM" },
+      { name: "Karodia Road", time: "08:00 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-11",
+    number: "Route R11",
+    name: "Tarsali Ring Road → ONGC → GSFC Campus",
+    start: "Tarsali Ring Road",
+    bus: "Bus #11 (GJ-06-AX-1011)",
+    speed: "44 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Tarsali Bypass Circle", time: "07:20 AM" },
+      { name: "ONGC Complex", time: "07:45 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-12",
+    number: "Route R12",
+    name: "VIP Road → Chhani Jakatnaka → GSFC Campus",
+    start: "VIP Road",
+    bus: "Bus #12 (GJ-06-AX-1012)",
+    speed: "38 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "VIP Road Circle", time: "07:40 AM" },
+      { name: "TP 13 Junction", time: "07:55 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-13",
+    number: "Route R13",
+    name: "Bajwa Station → Fertilizer Nagar → GSFC Campus",
+    start: "Bajwa Station",
+    bus: "Bus #13 (GJ-06-AX-1013)",
+    speed: "30 km/h",
+    currentStopIdx: 1,
+    stops: [
+      { name: "Bajwa Railway Station", time: "08:00 AM" },
+      { name: "Fertilizer Nagar", time: "08:08 AM" },
+      { name: "GSFCU Main Campus Gate", time: "08:15 AM" },
+    ],
+  },
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,6 +231,10 @@ function Landing() {
   const [activeRoleTab, setActiveRoleTab] = useState<"student" | "driver" | "admin">("student");
   const [liveSimProgress, setLiveSimProgress] = useState(45);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showAllRoutesModal, setShowAllRoutesModal] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState("route-2");
+
+  const activeRoute = ALL_13_ROUTES.find((r) => r.id === selectedRouteId) || ALL_13_ROUTES[1];
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user));
@@ -166,20 +359,40 @@ function Landing() {
               </div>
             </div>
 
-            {/* Right Live Journey Simulation Widget */}
-            <div className="lg:col-span-5">
+            {/* Right Live Journey Simulation Widget & Route Selector */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Route Selector Dropdown Header */}
+              <div className="rounded-2xl border border-primary/20 bg-muted/50 p-3 flex items-center justify-between gap-2 shadow-sm">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <RouteIcon className="h-4 w-4 text-primary shrink-0" />
+                  <span>Select Route:</span>
+                </div>
+                <select
+                  value={selectedRouteId}
+                  onChange={(e) => setSelectedRouteId(e.target.value)}
+                  className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-bold text-foreground outline-none focus:border-primary cursor-pointer max-w-[220px]"
+                >
+                  {ALL_13_ROUTES.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.number} ({r.start})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Active Route Card */}
               <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card p-6 shadow-2xl space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                      Active Shuttle #04
+                      {activeRoute.bus}
                     </span>
-                    <h3 className="font-display text-lg font-bold mt-1">Route R2</h3>
-                    <p className="text-xs text-muted-foreground">Sama Savli Road → GSFCU Main Campus</p>
+                    <h3 className="font-display text-lg font-bold mt-1">{activeRoute.number}</h3>
+                    <p className="text-xs text-muted-foreground">{activeRoute.name}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-xs font-mono text-emerald-500 font-bold">On Time</span>
-                    <div className="text-xs text-muted-foreground font-mono">38 km/h</div>
+                    <div className="text-xs text-muted-foreground font-mono">{activeRoute.speed}</div>
                   </div>
                 </div>
 
@@ -196,39 +409,48 @@ function Landing() {
                   </div>
                 </div>
 
+                {/* Dynamic Route Stops Timeline */}
                 <div className="space-y-3 pt-2 text-xs">
-                  <div className="flex items-center justify-between rounded-xl bg-muted/30 p-3 border border-border/40">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                      <span>Sama Cross Roads</span>
-                    </div>
-                    <span className="font-mono text-muted-foreground">07:45 AM</span>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl bg-primary/10 p-3 border border-primary/30 text-primary font-bold">
-                    <div className="flex items-center gap-2">
-                      <Radio className="h-4 w-4 animate-pulse" />
-                      <span>Sama Savli Circle</span>
-                    </div>
-                    <span className="font-mono text-xs">Current Stop (ETA 2 min)</span>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl bg-muted/30 p-3 border border-border/40">
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40" />
-                      <span>Nizampura Junction</span>
-                    </div>
-                    <span className="font-mono text-muted-foreground">08:05 AM</span>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl bg-muted/30 p-3 border border-border/40">
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40" />
-                      <span>GSFCU Main Campus Gate</span>
-                    </div>
-                    <span className="font-mono text-muted-foreground">08:15 AM</span>
-                  </div>
+                  {activeRoute.stops.map((stop, idx) => {
+                    const isPassed = idx < activeRoute.currentStopIdx;
+                    const isCurrent = idx === activeRoute.currentStopIdx;
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex items-center justify-between rounded-xl p-3 border transition ${
+                          isCurrent
+                            ? "bg-primary/10 border-primary/30 text-primary font-bold shadow-sm"
+                            : isPassed
+                            ? "bg-muted/30 border-border/40 text-muted-foreground"
+                            : "bg-muted/30 border-border/40 text-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isCurrent ? (
+                            <Radio className="h-4 w-4 animate-pulse text-primary shrink-0" />
+                          ) : isPassed ? (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                          ) : (
+                            <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 shrink-0" />
+                          )}
+                          <span>{stop.name}</span>
+                        </div>
+                        <span className="font-mono text-xs">
+                          {isCurrent ? "Current Stop (ETA 2 min)" : stop.time}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
+
+                {/* View All 13 Routes Modal Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setShowAllRoutesModal(true)}
+                  className="w-full rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 py-2.5 text-xs font-bold text-primary transition flex items-center justify-center gap-2"
+                >
+                  <RouteIcon className="h-4 w-4" /> Explore All 13 Bus Routes Network
+                </button>
               </div>
             </div>
           </div>
@@ -311,6 +533,71 @@ function Landing() {
           </div>
         </div>
       )}
+
+      {/* Explore All 13 Bus Routes Modal */}
+      {showAllRoutesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-6 my-auto max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border/60 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
+                  <RouteIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display text-xl font-extrabold">Official GSFCU 13 Shuttle Routes Network</h3>
+                  <p className="text-xs text-muted-foreground">Select any route to preview its live stop timeline & departure schedule</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAllRoutesModal(false)}
+                className="rounded-full bg-muted p-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto pr-1">
+              {ALL_13_ROUTES.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => {
+                    setSelectedRouteId(r.id);
+                    setShowAllRoutesModal(false);
+                  }}
+                  className={`rounded-2xl border p-4 cursor-pointer transition hover:scale-[1.02] ${
+                    selectedRouteId === r.id
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border/80 bg-muted/20 hover:border-primary/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-primary">{r.number}</span>
+                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      {r.bus}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm text-foreground mt-2">{r.name}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">Start: {r.start}</p>
+                  <div className="mt-3 flex items-center justify-between text-[11px] font-mono border-t border-border/40 pt-2">
+                    <span className="text-muted-foreground">{r.stops.length} Stops</span>
+                    <span className="text-primary font-bold">Select & Preview &rarr;</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 text-right border-t border-border/60">
+              <button
+                onClick={() => setShowAllRoutesModal(false)}
+                className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-md min-h-[40px]"
+              >
+                Close Network View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
