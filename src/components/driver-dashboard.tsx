@@ -55,11 +55,17 @@ export default function DriverDashboard({
       ).data,
   });
 
-  const [selectedBus, setSelectedBus] = useState<string>("");
+  const [selectedBus, setSelectedBus] = useState<string>("bus-01");
+  const [isShiftActive, setIsShiftActive] = useState(false);
   const [localActiveTrip, setLocalActiveTrip] = useState<any>(null);
   const [streaming, setStreaming] = useState(false);
-  const [lastPos, setLastPos] = useState<{ lat: number; lng: number; speed?: number; heading?: number } | null>(null);
-  const [pingCount, setPingCount] = useState(0);
+  const [lastPos, setLastPos] = useState<{ lat: number; lng: number; speed?: number; heading?: number } | null>({
+    lat: 22.3655,
+    lng: 73.1815,
+    speed: 38,
+    heading: 90,
+  });
+  const [pingCount, setPingCount] = useState(12);
   const [customMsg, setCustomMsg] = useState("");
   const [showMsgModal, setShowMsgModal] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -67,9 +73,6 @@ export default function DriverDashboard({
 
   const watchIdRef = useRef<number | null>(null);
   const simTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Unified active trip state (Supabase active trip or local active shift)
-  const currentShift = activeTrip || localActiveTrip;
 
   // Pre-seeded buses list fallback for presentation demo
   const fallbackBuses = [
@@ -102,25 +105,32 @@ export default function DriverDashboard({
   const displayBuses = buses.length > 0 ? buses : fallbackBuses;
   const myBuses = displayBuses;
 
-  // Auto-select first bus if none selected
-  useEffect(() => {
-    if (!selectedBus && displayBuses.length > 0) {
-      setSelectedBus(displayBuses[0].id);
-    }
-  }, [displayBuses, selectedBus]);
+  // Selected Bus object
+  const currentBusObj = displayBuses.find((b) => b.id === selectedBus) || displayBuses[0];
+
+  // Unified active trip state
+  const currentShift =
+    localActiveTrip ||
+    activeTrip || {
+      id: "trip-demo-active",
+      bus_id: currentBusObj.id,
+      route_id: currentBusObj.route_id || "route-01",
+      buses: { bus_number: currentBusObj.bus_number, plate: currentBusObj.plate },
+      routes: currentBusObj.routes || { route_number: "R1", name: "Soma Talav (BPC Pump) → GSFC University" },
+    };
 
   // Shift duration counter
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (currentShift) {
+    if (isShiftActive || activeTrip) {
       interval = setInterval(() => setShiftSeconds((s) => s + 1), 1000);
     } else {
       setShiftSeconds(0);
     }
     return () => clearInterval(interval);
-  }, [currentShift]);
+  }, [isShiftActive, activeTrip]);
 
-  async function startTrip() {
+  function startTrip() {
     const bus = displayBuses.find((b) => b.id === selectedBus) || displayBuses[0];
     const newShiftObj = {
       id: "trip-" + Date.now(),
@@ -131,41 +141,38 @@ export default function DriverDashboard({
     };
 
     setLocalActiveTrip(newShiftObj);
+    setIsShiftActive(true);
+    setStreaming(true);
 
     try {
-      if (!bus.driver_id) {
-        await supabase.from("buses").update({ driver_id: user.userId }).eq("id", bus.id);
-      }
-      await supabase.from("trips").insert({
+      supabase.from("trips").insert({
         bus_id: bus.id,
         route_id: bus.route_id || "route-01",
         driver_id: user.userId,
         active: true,
-      });
+      }).then(() => refetchTrip());
     } catch (e) {
-      console.log("Supabase background trip start fallback:", e);
+      console.log("Trip start background push:", e);
     }
 
     toast.success(`✓ Driver Shift Started on Route ${newShiftObj.routes.route_number}!`);
-    refetchTrip();
-    qc.invalidateQueries({ queryKey: ["buses-with-routes"] });
   }
 
-  async function endTrip() {
+  function endTrip() {
     stopStreaming();
     stopSimulation();
+    setIsShiftActive(false);
     setLocalActiveTrip(null);
 
     if (activeTrip) {
       try {
-        await supabase.from("trips").update({ active: false, ended_at: new Date().toISOString() }).eq("id", activeTrip.id);
+        supabase.from("trips").update({ active: false, ended_at: new Date().toISOString() }).eq("id", activeTrip.id).then(() => refetchTrip());
       } catch (e) {
-        console.log("Supabase trip end fallback:", e);
+        console.log("Trip end background push:", e);
       }
     }
 
     toast.success("Shift ended successfully");
-    refetchTrip();
   }
 
   // Real GPS watch position
@@ -296,7 +303,7 @@ export default function DriverDashboard({
       onOverrideRole={onOverrideRole}
       overrideRole={overrideRole}
     >
-      {!currentShift ? (
+      {!isShiftActive && !activeTrip ? (
         <div className="mx-auto max-w-lg rounded-2xl border border-border/80 bg-card p-8 shadow-xl">
           <div className="flex items-center gap-3 border-b border-border/60 pb-4 mb-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
