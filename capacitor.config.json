@@ -1,0 +1,16 @@
+{
+  "appId": "in.ac.gsfcuniversity.transit",
+  "appName": "GSFCU Transit",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://busbuddy-connect.vercel.app",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f172a"
+    }
+  }
+}
