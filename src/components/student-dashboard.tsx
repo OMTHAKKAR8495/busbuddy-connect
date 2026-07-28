@@ -580,7 +580,7 @@ function DigitalPass({
         {/* Header Badge */}
         <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <img src="/gsfc-logo.png" alt="GSFC University Logo" className="h-10 w-auto object-contain bg-white rounded-md p-1 shadow-md" />
+            <img src="/gsfc-transit-app-logo.png" alt="GSFC Bus Transit Logo" className="h-11 w-auto object-contain rounded-xl shadow-md" />
             <div>
               <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
                 <Sparkles className="h-3 w-3" /> GSFC UNIVERSITY VERIFIED BUS PASS

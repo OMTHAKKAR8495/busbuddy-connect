@@ -66,7 +66,7 @@ function Landing() {
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <img src="/gsfc-logo.png" alt="GSFC University Official Logo" className="h-10 sm:h-12 w-auto object-contain rounded-md bg-white p-1 shadow-sm" />
+            <img src="/gsfc-transit-app-logo.png" alt="GSFC Bus Transit System Logo" className="h-10 sm:h-12 w-auto object-contain rounded-xl shadow-md transition hover:scale-105" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-display text-lg font-bold tracking-tight">GSFCU Transit</span>
