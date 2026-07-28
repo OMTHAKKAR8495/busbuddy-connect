@@ -23,25 +23,6 @@ export default function AppShell({
   const [showSpecModal, setShowSpecModal] = useState(false);
   const [mobileSimulated, setMobileSimulated] = useState(false);
 
-  // Admin Login Modal state
-  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
-  const [adminLoginPass, setAdminLoginPass] = useState("");
-  const [adminLoginError, setAdminLoginError] = useState(false);
-  const [adminShowPass, setAdminShowPass] = useState(false);
-
-  function handleAdminModalLogin(e: React.FormEvent) {
-    e.preventDefault();
-    const pass = adminLoginPass.trim();
-    if (pass === "7043313347@Om" || pass === "admin123") {
-      localStorage.setItem("gsfc_admin_auth_session", JSON.stringify({ valid: true, ts: Date.now(), email: "omthakkar@gsfcuniversity.ac.in" }));
-      setShowAdminLoginModal(false);
-      setAdminLoginPass("");
-      window.location.href = "/admin";
-    } else {
-      setAdminLoginError(true);
-    }
-  }
-
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return document.documentElement.classList.contains("dark") || localStorage.getItem("theme") !== "light";
@@ -285,7 +266,7 @@ export default function AppShell({
 
             {/* Admin Login Button — visible in header for admin access */}
             <button
-              onClick={() => { setAdminLoginPass(""); setAdminLoginError(false); setShowAdminLoginModal(true); }}
+              onClick={() => { window.location.href = "/admin"; }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition"
               title="Transport Admin Login"
             >
@@ -370,92 +351,15 @@ export default function AppShell({
 
             {/* Admin Login in bottom mobile nav */}
             <button
-              onClick={() => { setAdminLoginPass(""); setAdminLoginError(false); setShowAdminLoginModal(true); }}
+              onClick={() => { window.location.href = "/admin"; }}
               className="flex flex-col items-center justify-center py-1 px-2 rounded-xl text-center text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition min-h-[48px] flex-1"
-              title="Admin Login"
+              title="Admin Login Page"
             >
               <Lock className="h-4 w-4" />
               <span className="text-[10px] leading-tight font-semibold mt-0.5">Admin</span>
             </button>
           </div>
         </nav>
-      )}
-
-      {/* 🔐 Admin Login Modal */}
-      {showAdminLoginModal && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowAdminLoginModal(false); setAdminLoginPass(""); setAdminLoginError(false); }}}
-        >
-          <div className="w-full max-w-sm rounded-3xl border border-amber-500/30 bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                <Lock className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="font-bold text-base">Transport Admin Login</div>
-                <div className="text-xs text-muted-foreground">GSFCU Transit · Admin HQ Access</div>
-              </div>
-              <button
-                onClick={() => { setShowAdminLoginModal(false); setAdminLoginPass(""); setAdminLoginError(false); }}
-                className="ml-auto rounded-xl p-2 text-muted-foreground hover:bg-muted transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-              Admin-only access. Your login will be securely verified.
-            </div>
-
-            <form onSubmit={handleAdminModalLogin} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type={adminShowPass ? "text" : "password"}
-                    value={adminLoginPass}
-                    onChange={(e) => { setAdminLoginPass(e.target.value); setAdminLoginError(false); }}
-                    placeholder="Enter admin password…"
-                    className={`w-full rounded-2xl border ${adminLoginError ? "border-red-500 bg-red-500/5" : "border-input bg-background"} pl-10 pr-12 py-3 text-sm font-mono outline-none focus:border-amber-500 transition`}
-                    autoFocus
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setAdminShowPass((v) => !v)}
-                    className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground transition"
-                    tabIndex={-1}
-                  >
-                    {adminShowPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {adminLoginError && (
-                  <p className="mt-1.5 text-xs text-red-500 font-semibold">❌ Incorrect password. Access denied.</p>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setShowAdminLoginModal(false); setAdminLoginPass(""); setAdminLoginError(false); }}
-                  className="flex-1 rounded-2xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:bg-muted transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-2xl bg-amber-500 py-3 text-sm font-bold text-white hover:bg-amber-600 shadow-lg shadow-amber-500/25 transition active:scale-95 flex items-center justify-center gap-2"
-                >
-                  <ShieldCheck className="h-4 w-4" /> Enter Admin HQ
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
 
       {/* Faculty Presentation Spec Modal */}

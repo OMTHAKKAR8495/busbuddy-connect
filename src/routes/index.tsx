@@ -361,6 +361,14 @@ function Landing() {
               <Smartphone className="h-4 w-4" /> Get Mobile App
             </button>
 
+            {/* Dedicated Admin Portal Link */}
+            <Link
+              to="/admin"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition"
+            >
+              <ShieldCheck className="h-4 w-4" /> Admin Portal
+            </Link>
+
             {signedIn ? (
               <Link
                 to="/app"
