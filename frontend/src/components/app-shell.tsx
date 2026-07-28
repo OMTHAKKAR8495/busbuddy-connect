@@ -313,40 +313,99 @@ export default function AppShell({
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-2 font-mono">
+              {/* Student Information Banner */}
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3.5 space-y-2">
+                <div className="font-bold text-sm text-foreground flex items-center gap-2">
+                  <Award className="h-4 w-4 text-primary" /> Student Developer Profile
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground font-semibold">Student Name:</span>{" "}
+                    <strong className="text-foreground font-bold">Om Thakkar</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-semibold">Roll / Enrollment No:</span>{" "}
+                    <strong className="font-mono text-primary font-bold">24BT04171</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-semibold">Branch & University:</span>{" "}
+                    <span className="text-foreground font-medium">B.Tech CSE · GSFC University, Vadodara</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-semibold">Evaluation Status:</span>{" "}
+                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      100% Practical Ready
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stat Counters & Cost Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
                 <div className="rounded-xl border border-border/80 bg-muted/30 p-2.5">
                   <div className="text-muted-foreground text-[10px] font-bold flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-primary" /> TIMELINE
+                    <DollarSign className="h-3 w-3 text-emerald-500" /> PROJECT BUDGET
                   </div>
-                  <div className="font-bold text-foreground text-xs">4 Weeks Build</div>
+                  <div className="font-bold text-emerald-600 dark:text-emerald-400 text-xs mt-0.5">₹0.00 (Free Tier)</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-muted/30 p-2.5">
                   <div className="text-muted-foreground text-[10px] font-bold flex items-center gap-1">
-                    <DollarSign className="h-3 w-3 text-emerald-500" /> COMMERCIAL
+                    <Award className="h-3 w-3 text-primary" /> MARKET VALUE
                   </div>
-                  <div className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">₹2,00,000 ($2.4k)</div>
+                  <div className="font-bold text-foreground text-xs mt-0.5">₹2,00,000 ($2.4k)</div>
+                </div>
+                <div className="rounded-xl border border-border/80 bg-muted/30 p-2.5">
+                  <div className="text-muted-foreground text-[10px] font-bold flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-amber-500" /> TIME TAKEN
+                  </div>
+                  <div className="font-bold text-foreground text-xs mt-0.5">48 Hours (4 Days)</div>
                 </div>
                 <div className="rounded-xl border border-border/80 bg-muted/30 p-2.5">
                   <div className="text-muted-foreground text-[10px] font-bold flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3 text-primary" /> CLOUD COST
                   </div>
-                  <div className="font-bold text-foreground text-xs">₹0 / Month</div>
+                  <div className="font-bold text-foreground text-xs mt-0.5">₹0 / Month</div>
+                </div>
+              </div>
+
+              {/* Financial & Time Taken Breakdown Table */}
+              <div className="rounded-2xl border border-border/80 bg-card p-3 space-y-2">
+                <h4 className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-emerald-500" /> Financial Budget & Time Metrics Breakdown
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                  <div className="rounded-lg bg-muted/40 p-2 border border-border/40">
+                    <div className="font-bold text-foreground">Hardware Savings</div>
+                    <div><strong>₹1,50,000 INR saved</strong> by using conductor mobile cameras instead of hardware scanners.</div>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-2 border border-border/40">
+                    <div className="font-bold text-foreground">Engineering Hours</div>
+                    <div><strong>48 Hours</strong> of agile development, testing, and Supabase database architecture.</div>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-2 border border-border/40">
+                    <div className="font-bold text-foreground">Codebase Scale</div>
+                    <div><strong>~15,000+ Lines</strong> of clean TypeScript, React 19, Tailwind CSS & Supabase SQL.</div>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-2 border border-border/40">
+                    <div className="font-bold text-foreground">Subsystems Built</div>
+                    <div><strong>5 Enterprise Modules</strong> (Landing App, Student Pass, Scanner, Driver Cockpit, Admin HQ).</div>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-2">
-                  <Code2 className="h-4 w-4 text-primary" /> System Architecture & Requirements
+                <h4 className="font-bold text-xs text-foreground flex items-center gap-1.5 mb-1.5">
+                  <Code2 className="h-3.5 w-3.5 text-primary" /> System Architecture & Requirements
                 </h4>
-                <ul className="space-y-2 text-muted-foreground">
+                <ul className="space-y-1.5 text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
                       <strong className="text-foreground">Realtime Gate QR Scanner (`jsQR`):</strong> High-speed phone camera decoder for instant student identity verification.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
                       <strong className="text-foreground">Anti-Fraud Dynamic Bus Pass:</strong> 15-second rotating TOTP QR token with student photo avatar and roll number `24BT04171`.
                     </span>
