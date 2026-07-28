@@ -105,14 +105,38 @@ function FleetTab() {
       })
       .subscribe();
 
+    const handleTelemetry = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.lat) {
+        setLocs((p) => ({
+          ...p,
+          [detail.bus_id || "bus-01"]: { lat: detail.lat, lng: detail.lng, speed: detail.speed, heading: detail.heading },
+        }));
+      }
+    };
+    window.addEventListener("gsfc_live_telemetry_event", handleTelemetry);
+    const stored = localStorage.getItem("gsfc_live_telemetry");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.lat) {
+          setLocs((p) => ({
+            ...p,
+            [parsed.bus_id || "bus-01"]: { lat: parsed.lat, lng: parsed.lng, speed: parsed.speed, heading: parsed.heading },
+          }));
+        }
+      } catch (err) {}
+    }
+
     return () => {
       supabase.removeChannel(ch);
+      window.removeEventListener("gsfc_live_telemetry_event", handleTelemetry);
     };
   }, []);
 
   const activeBusIds = new Set(activeTrips.map((t) => t.bus_id));
   const points = buses
-    .filter((b) => activeBusIds.has(b.id) && locs[b.id])
+    .filter((b) => locs[b.id])
     .map((b) => ({ bus_id: b.id, label: `Bus ${b.bus_number}`, ...locs[b.id] }));
 
   const routes = Array.from(

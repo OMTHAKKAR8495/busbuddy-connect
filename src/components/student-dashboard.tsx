@@ -142,8 +142,45 @@ function TrackPanel({ user }: { user: User }) {
         }));
       })
       .subscribe();
+
+    const handleTelemetry = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.lat) {
+        setLocations((prev) => ({
+          ...prev,
+          [detail.bus_id || "bus-01"]: {
+            lat: detail.lat,
+            lng: detail.lng,
+            speed: detail.speed,
+            heading: detail.heading,
+            recorded_at: new Date().toISOString(),
+          },
+        }));
+      }
+    };
+    window.addEventListener("gsfc_live_telemetry_event", handleTelemetry);
+    const stored = localStorage.getItem("gsfc_live_telemetry");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.lat) {
+          setLocations((prev) => ({
+            ...prev,
+            [parsed.bus_id || "bus-01"]: {
+              lat: parsed.lat,
+              lng: parsed.lng,
+              speed: parsed.speed,
+              heading: parsed.heading,
+              recorded_at: new Date().toISOString(),
+            },
+          }));
+        }
+      } catch (err) {}
+    }
+
     return () => {
       supabase.removeChannel(ch);
+      window.removeEventListener("gsfc_live_telemetry_event", handleTelemetry);
     };
   }, []);
 

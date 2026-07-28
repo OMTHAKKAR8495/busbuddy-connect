@@ -190,7 +190,7 @@ export default function DriverDashboard({
         month_year: "July 2026"
       }).then(() => console.log("Automatic driver shift & profile recorded in Supabase"));
 
-      // Also record login audit log
+      // Record login audit log
       supabase.from("user_login_audit_logs").insert({
         email: user.userId + "@gsfcuniversity.ac.in",
         role: "driver",
@@ -208,7 +208,8 @@ export default function DriverDashboard({
       console.log("Trip start background push:", e);
     }
 
-    toast.success(`✓ Shift Started: ${finalDriverName} assigned to Route ${newShiftObj.routes.route_number}!`);
+    toast.success(`📍 Location Granted: Telemetry Active! Broadcasting live GPS for ${finalDriverName} to Students, Admin HQ & Home Page Maps!`);
+    startStreaming();
   }
 
   function endTrip() {
@@ -225,10 +226,10 @@ export default function DriverDashboard({
       }
     }
 
-    toast.success("Shift ended successfully");
+    toast.success("Shift ended. GPS location tracking stopped.");
   }
 
-  // Real GPS watch position
+  // Real GPS watch position & Broadcast to all 3 departments + Home Page Map
   function startStreaming() {
     if (!currentShift) return;
     if (!navigator.geolocation) return toast.error("Geolocation not supported by device browser");
@@ -237,9 +238,24 @@ export default function DriverDashboard({
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (pos) => {
         const { latitude, longitude, speed, heading } = pos.coords;
-        const currentSpeedKmh = speed != null ? speed * 3.6 : 35;
-        setLastPos({ lat: latitude, lng: longitude, speed: currentSpeedKmh, heading: heading ?? 0 });
+        const currentSpeedKmh = speed != null ? speed * 3.6 : 38;
+        const telemetryPayload = {
+          bus_id: currentShift.bus_id,
+          label: `Bus ${currentShift.buses?.bus_number || 'BUS-01'} (${finalDriverName})`,
+          lat: latitude,
+          lng: longitude,
+          speed: currentSpeedKmh,
+          heading: heading ?? 90,
+          route_id: currentShift.route_id,
+          updatedAt: Date.now(),
+        };
+
+        setLastPos({ lat: latitude, lng: longitude, speed: currentSpeedKmh, heading: heading ?? 90 });
         setPingCount((c) => c + 1);
+
+        // Broadcast to localStorage and window event for instant 0ms cross-tab map sync
+        localStorage.setItem("gsfc_live_telemetry", JSON.stringify(telemetryPayload));
+        window.dispatchEvent(new CustomEvent("gsfc_live_telemetry_event", { detail: telemetryPayload }));
 
         try {
           await supabase.from("bus_locations").insert({
@@ -248,14 +264,14 @@ export default function DriverDashboard({
             lat: latitude,
             lng: longitude,
             speed: currentSpeedKmh,
-            heading: heading ?? 0,
+            heading: heading ?? 90,
           });
         } catch (e) {
           console.log("Telemetry insert fallback:", e);
         }
       },
       (err) => toast.error("GPS Error: " + err.message),
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
     );
   }
 
@@ -277,15 +293,31 @@ export default function DriverDashboard({
       [22.3712, 73.1865],
       [22.3801, 73.1932],
       [22.3910, 73.2015],
+      [22.3980, 73.2090],
     ];
 
     let idx = 0;
     simTimerRef.current = setInterval(async () => {
       const point = polyline[idx % polyline.length];
-      const speed = Math.floor(30 + Math.random() * 15);
+      const speed = Math.floor(32 + Math.random() * 12);
       const heading = Math.floor(Math.random() * 360);
+      const telemetryPayload = {
+        bus_id: currentShift.bus_id,
+        label: `Bus ${currentShift.buses?.bus_number || 'BUS-01'} (${finalDriverName})`,
+        lat: point[0],
+        lng: point[1],
+        speed,
+        heading,
+        route_id: currentShift.route_id,
+        updatedAt: Date.now(),
+      };
+
       setLastPos({ lat: point[0], lng: point[1], speed, heading });
       setPingCount((c) => c + 1);
+
+      // Broadcast to localStorage and window event for instant 0ms cross-tab map sync
+      localStorage.setItem("gsfc_live_telemetry", JSON.stringify(telemetryPayload));
+      window.dispatchEvent(new CustomEvent("gsfc_live_telemetry_event", { detail: telemetryPayload }));
 
       try {
         await supabase.from("bus_locations").insert({
@@ -301,7 +333,7 @@ export default function DriverDashboard({
       }
 
       idx++;
-    }, 3000);
+    }, 2000);
   }
 
   function stopSimulation() {

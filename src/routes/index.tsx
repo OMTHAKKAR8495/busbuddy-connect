@@ -28,6 +28,7 @@ import {
   Moon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import LiveMap, { type BusOnMap } from "@/components/live-map";
 
 const ALL_13_ROUTES = [
   {
@@ -256,13 +257,47 @@ function Landing() {
 
   const activeRoute = ALL_13_ROUTES.find((r) => r.id === selectedRouteId) || ALL_13_ROUTES[1];
 
+  const [liveBusesOnMap, setLiveBusesOnMap] = useState<BusOnMap[]>([
+    { bus_id: "bus-01", label: "Bus BUS-01 (Active Shift)", lat: 22.3655, lng: 73.1815, speed: 38, heading: 90 },
+  ]);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user));
     
     const timer = setInterval(() => {
       setLiveSimProgress((prev) => (prev >= 90 ? 15 : prev + 1.5));
     }, 1000);
-    return () => clearInterval(timer);
+
+    const handleTelemetry = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.lat) {
+        setLiveBusesOnMap([
+          {
+            bus_id: detail.bus_id || "bus-01",
+            label: detail.label || "Bus BUS-01 (Active Driver)",
+            lat: detail.lat,
+            lng: detail.lng,
+            speed: detail.speed,
+            heading: detail.heading,
+          },
+        ]);
+      }
+    };
+
+    window.addEventListener("gsfc_live_telemetry_event", handleTelemetry);
+    
+    const stored = localStorage.getItem("gsfc_live_telemetry");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.lat) setLiveBusesOnMap([parsed]);
+      } catch (err) {}
+    }
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("gsfc_live_telemetry_event", handleTelemetry);
+    };
   }, []);
 
   return (
@@ -433,6 +468,25 @@ function Landing() {
                     <span className="text-xs font-mono text-emerald-500 font-bold">On Time</span>
                     <div className="text-xs text-muted-foreground font-mono">{activeRoute.speed}</div>
                   </div>
+                </div>
+
+                {/* Live Map Widget displaying Driver Bus moving live across all 3 departments */}
+                <div className="rounded-2xl border border-primary/20 overflow-hidden shadow-md space-y-1 bg-card">
+                  <div className="bg-primary/10 px-3 py-2 text-xs font-bold text-primary flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-500" /> Live Driver Telemetry Map Stream
+                    </span>
+                    <span className="font-mono text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-bold">
+                      Synced Across Students, Admin & Home
+                    </span>
+                  </div>
+                  <LiveMap
+                    buses={liveBusesOnMap}
+                    routes={[{ polyline: activeRoute.stops.map(s => [s.lat, s.lng] as [number, number]), color: "#10b981" }]}
+                    center={[liveBusesOnMap[0]?.lat || 22.3655, liveBusesOnMap[0]?.lng || 73.1815]}
+                    zoom={13}
+                    height={210}
+                  />
                 </div>
 
                 <div className="space-y-2">
