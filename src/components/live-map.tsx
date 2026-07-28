@@ -33,10 +33,21 @@ export default function LiveMap({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div style={{ height }} className="rounded-xl bg-muted animate-pulse" />;
+  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const isCustomGoogleKey = googleMapsKey && !googleMapsKey.includes("YourGoogleMapsApiKeyHere");
+
+  const tileUrl = isCustomGoogleKey
+    ? `https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=${googleMapsKey}`
+    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+  const tileAttribution = isCustomGoogleKey
+    ? '&copy; <a href="https://maps.google.com">Google Maps</a>'
+    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
   return (
     <div className="overflow-hidden rounded-xl border border-border" style={{ height }}>
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
-        <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer attribution={tileAttribution} url={tileUrl} />
         {routes.map((r, i) => (
           <Polyline key={i} positions={r.polyline} pathOptions={{ color: r.color ?? "#1e40af", weight: 4, opacity: 0.7 }} />
         ))}
