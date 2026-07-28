@@ -158,19 +158,6 @@ export default function AppShell({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Mobile View Simulator Toggle */}
-            <button
-              onClick={() => setMobileSimulated(!mobileSimulated)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold border transition ${
-                mobileSimulated
-                  ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
-                  : "bg-card border-border text-foreground hover:bg-muted"
-              }`}
-            >
-              {mobileSimulated ? <Monitor className="h-3.5 w-3.5" /> : <Smartphone className="h-3.5 w-3.5 text-primary" />}
-              <span>{mobileSimulated ? "Exit Mobile Mode" : "📱 Mobile View"}</span>
-            </button>
-
             <div className="hidden sm:flex items-center gap-1.5">
               <span className="text-muted-foreground text-[11px] font-mono mr-0.5">Role:</span>
               {allowedTabs.map((tab) => (
