@@ -175,8 +175,37 @@ export default function DriverDashboard({
     setIsShiftActive(true);
     setStreaming(true);
 
+    const startTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const shiftDayStr = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const shiftDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const shiftLogObj = {
+      id: "shift-" + Date.now(),
+      driver_name: finalDriverName,
+      bus_number: bus.bus_number,
+      bus_plate: bus.plate,
+      route_number: bus.routes?.route_number || "Route R1",
+      route_name: bus.routes?.name || "Soma Talav → GSFC Campus",
+      start_location: "Depot / Origin Stop",
+      shift_start_time: startTimeStr,
+      shift_stop_time: "In Transit 🟢",
+      shift_day: shiftDayStr,
+      shift_date: shiftDateStr,
+      month_year: "July 2026",
+      created_at: new Date().toISOString(),
+    };
+
     try {
-      // Auto-save driver shift & new driver profile into Supabase
+      const existingShifts = JSON.parse(localStorage.getItem("gsfcu_driver_shifts") || "[]");
+      existingShifts.unshift(shiftLogObj);
+      localStorage.setItem("gsfcu_driver_shifts", JSON.stringify(existingShifts));
+      localStorage.setItem("gsfcu_active_shift_id", shiftLogObj.id);
+    } catch (e) {
+      console.error("Shift store fallback:", e);
+    }
+
+    try {
+      // Auto-save driver shift into Supabase
       supabase.from("driver_shift_logs_july_2026").insert({
         driver_name: finalDriverName,
         bus_number: bus.bus_number,
@@ -184,13 +213,12 @@ export default function DriverDashboard({
         route_number: bus.routes?.route_number || "Route R1",
         route_name: bus.routes?.name || "Soma Talav → GSFC Campus",
         start_location: "Depot / Origin Stop",
-        shift_start_time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        shift_stop_time: "In Transit",
-        shift_day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+        shift_start_time: startTimeStr,
+        shift_stop_time: "In Transit 🟢",
+        shift_day: shiftDayStr,
         month_year: "July 2026"
-      }).then(() => console.log("Automatic driver shift & profile recorded in Supabase"));
+      }).then(() => console.log("Automatic driver shift recorded in Supabase"));
 
-      // Record login audit log
       supabase.from("user_login_audit_logs").insert({
         email: user.userId + "@gsfcuniversity.ac.in",
         role: "driver",
@@ -208,7 +236,7 @@ export default function DriverDashboard({
       console.log("Trip start background push:", e);
     }
 
-    toast.success(`📍 Location Granted: Telemetry Active! Broadcasting live GPS for ${finalDriverName} to Students, Admin HQ & Home Page Maps!`);
+    toast.success(`📍 Location Granted: Telemetry Active! Driver ${finalDriverName} shift started at ${startTimeStr}. Reflected live in Admin HQ!`);
     startStreaming();
   }
 
@@ -218,6 +246,22 @@ export default function DriverDashboard({
     setIsShiftActive(false);
     setLocalActiveTrip(null);
 
+    const stopTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    try {
+      const activeShiftId = localStorage.getItem("gsfcu_active_shift_id");
+      const existingShifts = JSON.parse(localStorage.getItem("gsfcu_driver_shifts") || "[]");
+      const updatedShifts = existingShifts.map((s: any) => {
+        if (s.id === activeShiftId || s.shift_stop_time.includes("In Transit")) {
+          return { ...s, shift_stop_time: `${stopTimeStr} 🛑 (Completed)` };
+        }
+        return s;
+      });
+      localStorage.setItem("gsfcu_driver_shifts", JSON.stringify(updatedShifts));
+    } catch (e) {
+      console.error("Shift end update:", e);
+    }
+
     if (activeTrip) {
       try {
         supabase.from("trips").update({ active: false, ended_at: new Date().toISOString() }).eq("id", activeTrip.id).then(() => refetchTrip());
@@ -226,7 +270,7 @@ export default function DriverDashboard({
       }
     }
 
-    toast.success("Shift ended. GPS location tracking stopped.");
+    toast.success(`Shift ended at ${stopTimeStr}. Stopped time updated live in Admin HQ!`);
   }
 
   // Real GPS watch position & Broadcast to all 3 departments + Home Page Map

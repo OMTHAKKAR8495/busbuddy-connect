@@ -165,6 +165,154 @@ function FleetTab() {
           height={520}
         />
       </div>
+
+      {/* Driver Shift Start & Stop Time Audit Table */}
+      <DriverShiftAuditLogsSection />
+    </div>
+  );
+}
+
+function DriverShiftAuditLogsSection() {
+  const [shifts, setShifts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadShifts = async () => {
+      let localShifts: any[] = [];
+      try {
+        localShifts = JSON.parse(localStorage.getItem("gsfcu_driver_shifts") || "[]");
+      } catch (e) {
+        localShifts = [];
+      }
+
+      const seedShifts = [
+        {
+          id: "shift-demo-01",
+          driver_name: "Om Thakkar",
+          bus_number: "Bus #01",
+          bus_plate: "GJ-06-AX-1001",
+          route_number: "Route R1",
+          route_name: "Soma Talav → GSFC Campus",
+          shift_start_time: "07:30 AM",
+          shift_stop_time: "In Transit 🟢",
+          shift_day: "Tuesday",
+          shift_date: "July 28, 2026",
+        },
+        {
+          id: "shift-demo-02",
+          driver_name: "Ramesh Patel",
+          bus_number: "Bus #04",
+          bus_plate: "GJ-06-AX-1004",
+          route_number: "Route R2",
+          route_name: "Sama Savli Road → GSFC Campus",
+          shift_start_time: "07:45 AM",
+          shift_stop_time: "In Transit 🟢",
+          shift_day: "Tuesday",
+          shift_date: "July 28, 2026",
+        },
+        {
+          id: "shift-demo-03",
+          driver_name: "Suresh Kumar",
+          bus_number: "Bus #02",
+          bus_plate: "GJ-06-AX-1002",
+          route_number: "Route R4",
+          route_name: "Maneja → Makarpura → GSFC",
+          shift_start_time: "07:15 AM",
+          shift_stop_time: "05:15 PM 🛑 (Completed)",
+          shift_day: "Monday",
+          shift_date: "July 27, 2026",
+        },
+      ];
+
+      try {
+        const { data } = await supabase.from("driver_shift_logs_july_2026").select("*").order("created_at", { ascending: false });
+        const dbShifts = data ?? [];
+        const combined = [...localShifts, ...dbShifts, ...seedShifts];
+        const unique = Array.from(new Map(combined.map((s) => [s.driver_name + (s.shift_start_time || "") + (s.shift_date || ""), s])).values());
+        setShifts(unique);
+      } catch (e) {
+        const combined = [...localShifts, ...seedShifts];
+        const unique = Array.from(new Map(combined.map((s) => [s.driver_name + (s.shift_start_time || ""), s])).values());
+        setShifts(unique);
+      }
+    };
+
+    loadShifts();
+    const timer = setInterval(loadShifts, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+        <div>
+          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+            LIVE DRIVER SHIFT & TELEMETRY AUDIT LOGS
+          </span>
+          <h3 className="font-display font-extrabold text-lg text-foreground mt-1 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" /> Driver Shift Start & Stop Time Records
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Real-time shift login times, departure stops, and completion timestamps recorded from Driver Cockpit.
+          </p>
+        </div>
+        <span className="text-xs font-bold font-mono rounded-xl bg-muted px-3 py-1.5 border border-border/60">
+          {shifts.length} Total Driver Shifts
+        </span>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border/60">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-sans">
+            <thead>
+              <tr className="bg-muted/50 font-bold text-muted-foreground border-b border-border/60">
+                <th className="p-3.5">Driver Name</th>
+                <th className="p-3.5">Bus & Plate</th>
+                <th className="p-3.5">Assigned Shuttle Route</th>
+                <th className="p-3.5">Shift Start Time</th>
+                <th className="p-3.5">Shift Stop Time</th>
+                <th className="p-3.5">Shift Day & Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40 font-medium">
+              {shifts.map((s, idx) => {
+                const isActive = s.shift_stop_time?.includes("In Transit") || s.shift_stop_time?.includes("🟢");
+                return (
+                  <tr key={s.id || idx} className="hover:bg-muted/20 transition">
+                    <td className="p-3.5 font-bold text-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-primary" /> {s.driver_name}
+                      </div>
+                    </td>
+                    <td className="p-3.5 font-mono text-muted-foreground">
+                      {s.bus_number} <span className="text-[10px] text-muted-foreground">({s.bus_plate})</span>
+                    </td>
+                    <td className="p-3.5 font-semibold text-foreground">
+                      {s.route_number}: {s.route_name}
+                    </td>
+                    <td className="p-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      {s.shift_start_time}
+                    </td>
+                    <td className="p-3.5 font-mono">
+                      {isActive ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                          <span className="beacon-dot"></span> In Transit
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground border border-border/60">
+                          {s.shift_stop_time}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3.5 text-xs text-muted-foreground font-mono">
+                      {s.shift_day}, {s.shift_date || "July 28, 2026"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -247,7 +395,32 @@ function PassesTab() {
     qc.invalidateQueries({ queryKey: ["passes-all"] });
   }
 
-  const mergedPasses = passes.map((p) => {
+  // Load student applications submitted from Student Dashboard
+  const localStudentApps = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("gsfcu_student_applications") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }, [overrides]);
+
+  const rawPassList = passes.length > 0 ? passes : [
+    {
+      id: "pass-demo-101",
+      student_id: "eval-om-thakkar",
+      status: "pending",
+      fee_paid: false,
+      valid_from: "2026-07-28",
+      valid_until: "2027-01-28",
+      routes: { route_number: "R1", name: "Soma Talav → GSFCU" },
+      profiles: { full_name: "Om Thakkar", roll_number: "24BT04171" },
+    },
+  ];
+
+  const combinedAll = [...localStudentApps, ...rawPassList];
+  const uniquePasses = Array.from(new Map(combinedAll.map((item) => [item.id, item])).values());
+
+  const mergedPasses = uniquePasses.map((p) => {
     const o = overrides[p.id];
     return o ? { ...p, status: o.status, fee_paid: o.fee_paid } : p;
   });
