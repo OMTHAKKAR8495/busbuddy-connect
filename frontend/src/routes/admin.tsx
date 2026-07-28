@@ -22,36 +22,38 @@ function AdminRouteComponent() {
     }
     return false;
   });
-  const [passcode, setPasscode] = useState("");
+  const [adminEmail, setAdminEmail] = useState("omthakkar@gsfcuniversity.ac.in");
+  const [adminPassword, setAdminPassword] = useState("7043313347@Om");
   const [loading, setLoading] = useState(false);
 
   function handleAdminPasscodeLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
+    const emailTrim = adminEmail.trim().toLowerCase();
+    const passTrim = adminPassword.trim();
+
     if (
-      passcode.trim() === "admin123" ||
-      passcode.trim().toLowerCase() === "admin" ||
-      passcode.trim() === "24BT04171" ||
-      passcode.trim().toLowerCase() === "gsfcu"
+      (emailTrim.includes("omthakkar") || emailTrim.includes("admin")) &&
+      (passTrim === "7043313347@Om" || passTrim === "admin123" || passTrim === "24BT04171" || passTrim.toLowerCase() === "admin")
     ) {
       localStorage.setItem("gsfc_admin_auth", "true");
       setIsAdminAuthenticated(true);
-      toast.success("✓ Transport Admin HQ Authorized! Welcome Om Thakkar.");
+      toast.success("✓ Transport Admin Authorized: Welcome Om Thakkar!");
       setLoading(false);
       return;
     }
 
-    // Try Supabase authentication
+    // Try Supabase authentication fallback
     supabase.auth
       .signInWithPassword({
-        email: passcode.includes("@") ? passcode : `${passcode}@gsfcuniversity.ac.in`,
-        password: "password123",
+        email: emailTrim.includes("@") ? emailTrim : `${emailTrim}@gsfcuniversity.ac.in`,
+        password: passTrim,
       })
       .then(({ error }) => {
         setLoading(false);
         if (error) {
-          toast.error("Invalid Admin Passcode. Use master code: admin123");
+          toast.error("Invalid credentials. Standard Pass: 7043313347@Om");
         } else {
           localStorage.setItem("gsfc_admin_auth", "true");
           setIsAdminAuthenticated(true);
@@ -77,7 +79,7 @@ function AdminRouteComponent() {
       <div>
         <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 text-center text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-2">
           <ShieldCheck className="h-4 w-4" />
-          <span>Dedicated Transport Admin HQ Portal (/admin) — Session Active</span>
+          <span>Transport Admin HQ Authorized (omthakkar@gsfcuniversity.ac.in) — Session Active</span>
           <button
             onClick={handleSignOutAdmin}
             className="ml-3 rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold hover:bg-amber-500/30 transition text-amber-700 dark:text-amber-300"
@@ -108,7 +110,7 @@ function AdminRouteComponent() {
             Restricted Admin Portal
           </h1>
           <p className="text-xs text-muted-foreground">
-            Enter Transport Admin Security Passcode or Master Key to access Fleet Command, Bus Passes, & Attendance CSVs.
+            Sign in with official Transport Admin credentials to access Fleet Command, Bus Passes, & Attendance CSVs.
           </p>
         </div>
 
@@ -119,24 +121,40 @@ function AdminRouteComponent() {
               <Lock className="h-6 w-6" />
             </div>
             <div>
-              <div className="font-bold text-sm">Admin HQ Passcode</div>
-              <div className="text-xs text-muted-foreground">Author: Om Thakkar (Roll 24BT04171)</div>
+              <div className="font-bold text-sm">Transport Admin Login</div>
+              <div className="text-xs text-muted-foreground">Om Thakkar (Roll 24BT04171)</div>
             </div>
           </div>
 
           <form onSubmit={handleAdminPasscodeLogin} className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground flex items-center justify-between">
-                <span>Security Passcode / Master Key</span>
-                <span className="font-mono text-[10px] text-primary">Master: admin123</span>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                Admin Email / ID
+              </label>
+              <div className="relative">
+                <ShieldCheck className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="omthakkar@gsfcuniversity.ac.in"
+                  className="w-full rounded-2xl border border-input bg-background pl-10 pr-4 py-2.5 text-sm font-mono outline-none focus:border-primary transition"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                Admin Security Password
               </label>
               <div className="relative">
                 <Key className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                 <input
                   type="password"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter passcode (admin123)…"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Enter password (7043313347@Om)…"
                   className="w-full rounded-2xl border border-input bg-background pl-10 pr-4 py-2.5 text-sm font-mono outline-none focus:border-primary transition"
                   required
                 />
