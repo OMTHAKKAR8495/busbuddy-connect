@@ -1,4 +1,9 @@
-# 🚌 GSFCU Transit — Smart Campus Mobility & Fleet Platform
+<div align="center">
+  <img src="public/gsfc-transit-logo.png" alt="GSFCU Transit Logo" width="200" />
+  <h1>🚌 GSFCU Transit — Smart Campus Mobility & Fleet Platform</h1>
+  
+  [![Live Demo](https://img.shields.io/badge/Live_Demo-busbuddy--connect.vercel.app-blue?style=for-the-badge&logo=vercel)](https://busbuddy-connect.vercel.app)
+</div>
 
 GSFCU Transit is a custom-engineered, real-time campus shuttle tracking and digital transit management system built specifically for GSFC University students, shuttle drivers, and fleet transport administrators.
 
