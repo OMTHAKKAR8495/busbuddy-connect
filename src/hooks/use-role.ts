@@ -6,8 +6,8 @@ export type AppRole = "student" | "driver" | "admin";
 export function useMyRole() {
   return useQuery({
     queryKey: ["my-role"],
-    staleTime: 1000 * 60 * 60, // 1 hour instant cache
-    gcTime: 1000 * 60 * 120,
+    staleTime: 1000 * 5, // 5 seconds cache
+    gcTime: 1000 * 60 * 10,
     queryFn: async (): Promise<{ userId: string; role: AppRole; profile: { full_name: string; roll_number: string | null; photo_url: string | null } } | null> => {
       try {
         const { data: u } = await supabase.auth.getUser();

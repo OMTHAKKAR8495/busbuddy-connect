@@ -38,12 +38,26 @@ function AuthPage() {
 
     try {
       if (mode === "signup") {
+        let assignedRole = "student";
+        const emailLower = email.toLowerCase();
+        if (emailLower.includes("@driver")) {
+          assignedRole = "driver";
+        } else if (emailLower.includes("@admin")) {
+          assignedRole = "admin";
+        } else if (emailLower.includes("@student")) {
+          assignedRole = "student";
+        } else {
+          toast.error("Registration Blocked: Email must contain @student, @driver, or @admin domain (e.g. raj@driver.com)");
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: fullName, roll_number: rollNumber || null, role },
+            data: { full_name: fullName, roll_number: rollNumber || null, role: assignedRole },
           },
         });
         if (error) throw error;
@@ -131,35 +145,13 @@ function AuthPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "signup" && (
             <>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Select Role
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "student", label: "Student", icon: User },
-                    { id: "driver", label: "Driver", icon: Bus },
-                    { id: "admin", label: "Admin", icon: ShieldCheck },
-                  ].map((r) => (
-                    <button
-                      type="button"
-                      key={r.id}
-                      onClick={() => setRole(r.id as never)}
-                      className={`flex flex-col items-center gap-1 rounded-xl border p-2.5 text-xs font-semibold transition ${
-                        role === r.id
-                          ? "border-primary bg-primary/10 text-primary shadow-sm"
-                          : "border-border/80 text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      <r.icon className="h-4 w-4" />
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-primary font-medium">
+                <p className="font-bold mb-1">Domain Access Control Active</p>
+                <p className="text-muted-foreground">Your account role will be automatically assigned based on your email domain (must contain <strong className="text-foreground">@student</strong>, <strong className="text-foreground">@driver</strong>, or <strong className="text-foreground">@admin</strong>).</p>
               </div>
               <Input label="Full Name" value={fullName} onChange={setFullName} required placeholder="e.g. Om Thakkar" />
-              {role === "student" && (
-                <Input label="Roll Number" value={rollNumber} onChange={setRollNumber} placeholder="e.g. 24BT04171" />
+              {(!email.toLowerCase().includes("@driver") && !email.toLowerCase().includes("@admin")) && (
+                <Input label="Roll Number (Optional)" value={rollNumber} onChange={setRollNumber} placeholder="e.g. 24BT04171" />
               )}
             </>
           )}

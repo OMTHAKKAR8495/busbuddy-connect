@@ -592,15 +592,23 @@ function PassesTab() {
     queryKey: ["admin-passes"],
     queryFn: async () => {
       const { data: rows } = await supabase
-        .from("bus_passes")
-        .select("*, routes(route_number,name)")
-        .order("created_at", { ascending: false });
+        .from("bus_pass_applications_master")
+        .select("*")
+        .order("applied_at", { ascending: false });
 
       if (!rows?.length) return [];
-      const ids = Array.from(new Set(rows.map((r) => r.student_id)));
-      const { data: profs } = await supabase.from("profiles").select("id, full_name, roll_number").in("id", ids);
-      const map = new Map((profs ?? []).map((p) => [p.id, p]));
-      return rows.map((r) => ({ ...r, profiles: map.get(r.student_id) ?? null }));
+      
+      return rows.map((r) => ({
+        id: r.id,
+        pass_number: r.pass_number,
+        student_id: r.roll_number,
+        status: r.approval_status === "Approved Active" ? "active" : r.approval_status === "Pending Approval" ? "pending" : r.approval_status === "Expired" ? "expired" : "rejected",
+        fee_paid: r.fee_payment_status === "Verified Paid",
+        valid_from: r.valid_from,
+        valid_until: r.valid_until,
+        routes: { route_number: r.route_number.replace("Route ", ""), name: r.pickup_stop },
+        profiles: { full_name: r.student_name, roll_number: r.roll_number },
+      }));
     },
   });
 
@@ -617,8 +625,19 @@ function PassesTab() {
       [passObj.id]: { status: nextStatus, fee_paid: nextFee },
     }));
 
+    const updatePayload: any = {};
+    if (patch.status) {
+       if (patch.status === "active") updatePayload.approval_status = "Approved Active";
+       if (patch.status === "pending") updatePayload.approval_status = "Pending Approval";
+       if (patch.status === "rejected") updatePayload.approval_status = "Rejected";
+       if (patch.status === "expired") updatePayload.approval_status = "Expired";
+    }
+    if (patch.fee_paid !== undefined) {
+       updatePayload.fee_payment_status = patch.fee_paid ? "Verified Paid" : "Pending Verification";
+    }
+
     // Update Supabase database
-    const { error } = await supabase.from("bus_passes").update(patch).eq("id", passObj.id);
+    const { error } = await supabase.from("bus_pass_applications_master").update(updatePayload).eq("id", passObj.id);
     if (error) {
       console.warn("Supabase pass update warning:", error.message);
     }
