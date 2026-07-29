@@ -596,7 +596,7 @@ function Landing() {
 
       {/* App Store & Play Store Download Modal */}
       {showInstallModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-6 my-auto animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-3">
@@ -673,7 +673,7 @@ function Landing() {
 
       {/* Explore All 13 Bus Routes Modal */}
       {showAllRoutesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-6 my-auto max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-border/60 pb-4">
               <div className="flex items-center gap-3">
