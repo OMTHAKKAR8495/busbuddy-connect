@@ -161,7 +161,7 @@ export default function AppShell({
   const allowedTabs = [
     { id: "student", label: "Student", emoji: "🎓", allowed: true },
     { id: "driver", label: "Driver", emoji: "🚌", allowed: isDriver || isAdmin },
-    { id: "scanner", label: "QR Scanner", emoji: "🔍", allowed: isDriver || isAdmin },
+    { id: "scanner", label: "QR Scanner", emoji: "🔍", allowed: true },
   ].filter((t) => t.allowed);
 
   return (
@@ -256,14 +256,13 @@ export default function AppShell({
                 </>
               )}
             </button>
-            {(isDriver || isAdmin) && (
-              <button
-                onClick={() => onOverrideRole?.(activeRoleLower.includes("scanner") ? null : "scanner")}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition"
-              >
-                <QrCode className="h-3.5 w-3.5" /> QR Scanner
-              </button>
-            )}
+
+            <button
+              onClick={() => onOverrideRole?.(activeRoleLower.includes("scanner") ? null : "scanner")}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition"
+            >
+              <QrCode className="h-3.5 w-3.5" /> QR Scanner
+            </button>
 
             {/* Admin Login Button — visible in header for admin access */}
             <button

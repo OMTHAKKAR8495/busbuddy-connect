@@ -12,6 +12,10 @@ import Bus from "./models/Bus.js";
 import BusLocation from "./models/BusLocation.js";
 import BusPass from "./models/BusPass.js";
 import Alert from "./models/Alert.js";
+import DriverShiftLog from "./models/DriverShiftLog.js";
+import AttendanceLog from "./models/AttendanceLog.js";
+import jwt from "jsonwebtoken";
+import { protect } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -39,6 +43,62 @@ mongoose
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", service: "GSFCU Transit MongoDB API", timestamp: new Date() });
 });
+
+// ==================== AUTH ENDPOINTS ====================
+
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET || "fallback_super_secret_key_gsfcu_transit", {
+    expiresIn: "30d",
+  });
+};
+
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { fullName, email, password, role, rollNumber, phone } = req.body;
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: "User already exists" });
+
+    const user = await User.create({ fullName, email, password, role, rollNumber, phone });
+    if (user) {
+      res.status(201).json({
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(400).json({ message: "Invalid user data" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (user && (await user.comparePassword(password))) {
+      res.json({
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/auth/me", protect, (req, res) => {
+  res.json(req.user);
+});
+
 
 // GET all 13 Routes with Stops
 app.get("/api/routes", async (req, res) => {
@@ -149,6 +209,62 @@ app.patch("/api/passes/:id", async (req, res) => {
     const { status, feePaid } = req.body;
     const updated = await BusPass.findByIdAndUpdate(req.params.id, { status, feePaid }, { new: true });
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== DRIVER SHIFTS & ATTENDANCE ====================
+
+// GET Driver Shift Logs
+app.get("/api/shifts", protect, async (req, res) => {
+  try {
+    const shifts = await DriverShiftLog.find().sort({ createdAt: -1 }).limit(100).populate("driverId", "fullName email").populate("routeId", "routeNumber name");
+    res.json(shifts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST Driver Shift Log
+app.post("/api/shifts", protect, async (req, res) => {
+  try {
+    const { routeId, status } = req.body;
+    const shift = await DriverShiftLog.create({ driverId: req.user._id, routeId, status });
+    res.status(201).json(shift);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET Attendance Logs
+app.get("/api/attendance", protect, async (req, res) => {
+  try {
+    const logs = await AttendanceLog.find().sort({ createdAt: -1 }).limit(500).populate("studentId", "fullName rollNumber email").populate("routeId", "routeNumber name").populate("stopId", "name");
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST Attendance Log
+app.post("/api/attendance", protect, async (req, res) => {
+  try {
+    const { studentId, routeId, stopId } = req.body;
+    const log = await AttendanceLog.create({ studentId, routeId, stopId });
+    res.status(201).json(log);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET Users by Role
+app.get("/api/users", protect, async (req, res) => {
+  try {
+    const { role } = req.query;
+    const query = role ? { role } : {};
+    const users = await User.find(query).select("-password");
+    res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
