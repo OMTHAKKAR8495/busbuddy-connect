@@ -33,3 +33,4 @@ dist-ssr
 
 # Private Database connections and keys
 _secrets/
+.env
