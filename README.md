@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/gsfc-transit-logo.png" alt="GSFCU Transit Logo" width="200" />
+  <img src="public/gsfc-transit-app-logo.png" alt="GSFCU Transit Logo" width="200" />
   <h1>🚌 GSFCU Transit — Smart Campus Mobility & Fleet Platform</h1>
   
   [![Live Demo](https://img.shields.io/badge/Live_Demo-busbuddy--connect.vercel.app-blue?style=for-the-badge&logo=vercel)](https://busbuddy-connect.vercel.app)
