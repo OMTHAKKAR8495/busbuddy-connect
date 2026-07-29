@@ -258,7 +258,13 @@ export default function AppShell({
             </button>
             {(isDriver || isAdmin) && (
               <button
-                onClick={() => onOverrideRole?.(activeRoleLower.includes("scanner") ? null : "scanner")}
+                onClick={() => {
+                  if (onOverrideRole) {
+                    onOverrideRole(activeRoleLower.includes("scanner") ? null : "scanner");
+                  } else {
+                    window.location.href = "/scanner";
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition"
               >
                 <QrCode className="h-3.5 w-3.5" /> QR Scanner
