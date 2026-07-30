@@ -585,7 +585,13 @@ function DriverShiftLogsTab() {
 
 function PassesTab() {
   const qc = useQueryClient();
-  const [overrides, setOverrides] = useState<Record<string, { status: "active" | "pending" | "expired" | "rejected"; fee_paid: boolean }>>({});
+  const [overrides, setOverrides] = useState<Record<string, { status: "active" | "pending" | "expired" | "rejected"; fee_paid: boolean }>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("gsfcu_pass_overrides") || "{}");
+    } catch (e) {
+      return {};
+    }
+  });
   const [inspectingPass, setInspectingPass] = useState<any | null>(null);
 
   const { data: passes = [] } = useQuery({
@@ -618,13 +624,30 @@ function PassesTab() {
   ) {
     const nextStatus = patch.status ?? passObj.status;
     const nextFee = patch.fee_paid ?? passObj.fee_paid;
+    const newOverride = { status: nextStatus, fee_paid: nextFee };
 
-    // Immediately update local state for instantaneous feedback
-    setOverrides((prev) => ({
-      ...prev,
-      [passObj.id]: { status: nextStatus, fee_paid: nextFee },
-    }));
+    // 1. Immediately update React State & LocalStorage Overrides
+    setOverrides((prev) => {
+      const updated = { ...prev, [passObj.id]: newOverride };
+      try {
+        localStorage.setItem("gsfcu_pass_overrides", JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
 
+    // 2. Update local student applications array in LocalStorage
+    try {
+      const currentLocal = JSON.parse(localStorage.getItem("gsfcu_student_applications") || "[]");
+      const updatedLocal = currentLocal.map((item: any) => {
+        if (item.id === passObj.id) {
+          return { ...item, status: nextStatus, fee_paid: nextFee };
+        }
+        return item;
+      });
+      localStorage.setItem("gsfcu_student_applications", JSON.stringify(updatedLocal));
+    } catch (e) {}
+
+    // 3. Update Supabase database
     const updatePayload: any = {};
     if (patch.status) {
        if (patch.status === "active") updatePayload.approval_status = "Approved Active";
@@ -636,10 +659,10 @@ function PassesTab() {
        updatePayload.fee_payment_status = patch.fee_paid ? "Verified Paid" : "Pending Verification";
     }
 
-    // Update Supabase database
-    const { error } = await (supabase as any).from("bus_pass_applications_master").update(updatePayload).eq("id", passObj.id);
-    if (error) {
-      console.warn("Supabase pass update warning:", error.message);
+    try {
+      await (supabase as any).from("bus_pass_applications_master").update(updatePayload).eq("id", passObj.id);
+    } catch (err) {
+      console.warn("Supabase pass update warning:", err);
     }
 
     if (nextStatus === "active") {
