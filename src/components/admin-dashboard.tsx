@@ -647,22 +647,26 @@ function PassesTab() {
       localStorage.setItem("gsfcu_student_applications", JSON.stringify(updatedLocal));
     } catch (e) {}
 
-    // 3. Update Supabase database
-    const updatePayload: any = {};
-    if (patch.status) {
-       if (patch.status === "active") updatePayload.approval_status = "Approved Active";
-       if (patch.status === "pending") updatePayload.approval_status = "Pending Approval";
-       if (patch.status === "rejected") updatePayload.approval_status = "Rejected";
-       if (patch.status === "expired") updatePayload.approval_status = "Expired";
-    }
-    if (patch.fee_paid !== undefined) {
-       updatePayload.fee_payment_status = patch.fee_paid ? "Verified Paid" : "Pending Verification";
-    }
+    // 3. Upsert into Supabase database so the record is permanently saved in the cloud DB
+    const upsertPayload: any = {
+      id: passObj.id,
+      pass_number: passObj.pass_number || "GSFC-PASS-" + String(passObj.id).slice(0, 8),
+      student_name: passObj.profiles?.full_name || "Student",
+      roll_number: passObj.profiles?.roll_number || "24BT04171",
+      route_number: "Route " + (passObj.routes?.route_number || "R1"),
+      pickup_stop: passObj.routes?.name || "Soma Talav",
+      valid_from: passObj.valid_from || "2026-07-28",
+      valid_until: passObj.valid_until || "2027-01-28",
+      fee_amount_inr: 4500,
+      fee_payment_status: nextFee ? "Verified Paid" : "Pending Verification",
+      approval_status: nextStatus === "active" ? "Approved Active" : nextStatus === "rejected" ? "Rejected" : nextStatus === "expired" ? "Expired" : "Pending Approval",
+      applied_at: new Date().toISOString(),
+    };
 
     try {
-      await (supabase as any).from("bus_pass_applications_master").update(updatePayload).eq("id", passObj.id);
+      await (supabase as any).from("bus_pass_applications_master").upsert(upsertPayload);
     } catch (err) {
-      console.warn("Supabase pass update warning:", err);
+      console.warn("Supabase pass upsert warning:", err);
     }
 
     if (nextStatus === "active") {
@@ -706,9 +710,10 @@ function PassesTab() {
   const rawPassList = passes.length > 0 ? passes : [
     {
       id: "pass-demo-101",
+      pass_number: "GSFC-PASS-101",
       student_id: "eval-om-thakkar",
-      status: "pending",
-      fee_paid: false,
+      status: overrides["pass-demo-101"]?.status ?? "pending",
+      fee_paid: overrides["pass-demo-101"]?.fee_paid ?? false,
       valid_from: "2026-07-28",
       valid_until: "2027-01-28",
       routes: { route_number: "R1", name: "Soma Talav → GSFCU" },
