@@ -185,7 +185,20 @@ function TrackPanel({ user }: { user: User }) {
   }, []);
 
   const route = useMemo(() => routes.find((r) => r.id === selectedRoute), [routes, selectedRoute]);
-  const stops = useMemo(() => (route?.stops ?? []).slice().sort((a, b) => a.stop_order - b.stop_order), [route]);
+  const stops = useMemo(
+    () =>
+      (route?.stops ?? []).slice().sort((a, b) => {
+        if ((a.stop_order ?? 0) !== (b.stop_order ?? 0)) return (a.stop_order ?? 0) - (b.stop_order ?? 0);
+        return (a.scheduled_time || "").localeCompare(b.scheduled_time || "");
+      }),
+    [route]
+  );
+
+  useEffect(() => {
+    if (stops.length && (!selectedStop || !stops.some((s) => s.id === selectedStop))) {
+      setSelectedStop(stops[0].id);
+    }
+  }, [stops, selectedStop]);
   const routeBuses = buses.filter((b) => b.route_id === selectedRoute);
 
   const busMapPoints = routeBuses

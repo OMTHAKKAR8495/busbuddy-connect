@@ -591,14 +591,14 @@ function PassesTab() {
   const { data: passes = [] } = useQuery({
     queryKey: ["admin-passes"],
     queryFn: async () => {
-      const { data: rows } = await supabase
+      const { data: rows } = await (supabase as any)
         .from("bus_pass_applications_master")
         .select("*")
         .order("applied_at", { ascending: false });
 
       if (!rows?.length) return [];
       
-      return rows.map((r) => ({
+      return (rows as any[]).map((r: any) => ({
         id: r.id,
         pass_number: r.pass_number,
         student_id: r.roll_number,
@@ -606,7 +606,7 @@ function PassesTab() {
         fee_paid: r.fee_payment_status === "Verified Paid",
         valid_from: r.valid_from,
         valid_until: r.valid_until,
-        routes: { route_number: r.route_number.replace("Route ", ""), name: r.pickup_stop },
+        routes: { route_number: (r.route_number || "R1").replace("Route ", ""), name: r.pickup_stop || "GSFCU" },
         profiles: { full_name: r.student_name, roll_number: r.roll_number },
       }));
     },
@@ -637,7 +637,7 @@ function PassesTab() {
     }
 
     // Update Supabase database
-    const { error } = await supabase.from("bus_pass_applications_master").update(updatePayload).eq("id", passObj.id);
+    const { error } = await (supabase as any).from("bus_pass_applications_master").update(updatePayload).eq("id", passObj.id);
     if (error) {
       console.warn("Supabase pass update warning:", error.message);
     }
