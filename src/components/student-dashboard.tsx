@@ -648,6 +648,9 @@ function DigitalPass({
   const qrValue = JSON.stringify({
     passId: pass.id,
     studentId: user.userId,
+    studentName: user.profile.full_name,
+    name: user.profile.full_name,
+    student: user.profile.full_name,
     roll: user.profile.roll_number,
     route: pass.routes?.route_number,
     token,

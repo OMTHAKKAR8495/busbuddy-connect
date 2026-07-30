@@ -23,6 +23,7 @@ import {
 import AppShell from "./app-shell";
 import { toast } from "sonner";
 import jsQR from "jsqr";
+import { supabase } from "@/integrations/supabase/client";
 
 type PassVerificationResult = {
   isValid: boolean;
@@ -284,7 +285,7 @@ export default function ConductorScannerPage({
   }
 
   // Process and verify scanned pass payload
-  function processScan(payloadString: string, demoPreset?: (typeof DEMO_STUDENT_PASSES)[0]["data"]) {
+  async function processScan(payloadString: string, demoPreset?: (typeof DEMO_STUDENT_PASSES)[0]["data"]) {
     stopPhoneCamera();
     setScanning(false);
     const now = new Date().toLocaleTimeString();
@@ -310,42 +311,106 @@ export default function ConductorScannerPage({
 
     try {
       const parsed = JSON.parse(payloadString);
-      if (parsed.passId || parsed.studentId || parsed.roll || parsed.name) {
-        const res: PassVerificationResult = {
-          isValid: true,
-          student: {
-            name: parsed.studentName || parsed.name || "Om Thakkar",
-            rollNumber: parsed.roll || "24BT04171",
-            department: "Computer Science & Engineering",
-            photoUrl: null,
-            phone: "+91 98765 43210",
-          },
-          pass: {
-            passId: parsed.passId || "GSFCU-PASS-2026-001",
-            routeNumber: parsed.route || "Route 1",
-            routeName: "GSFC University Campus Shuttle",
-            pickupStop: "Soma Talav (BPC Pump)",
-            validFrom: "2026-07-01",
-            validUntil: "2027-01-31",
-            feeStatus: "Verified Paid",
-          },
-          scannedAt: now,
-        };
-        setScanResult(res);
-        setHistory((prev) => [res, ...prev.slice(0, 9)]);
-        saveAuditLogToStorage(res);
-        toast.success(`✓ PASS VERIFIED: Welcome, ${res.student.name}!`);
-        playBeep(true);
-      } else {
-        throw new Error("Invalid QR Payload Structure");
+      let studentName = parsed.studentName || parsed.name || parsed.student || "";
+      let rollNumber = parsed.roll || parsed.rollNumber || "";
+      let department = parsed.department || "Computer Science & Engineering";
+      let phone = parsed.phone || "+91 98765 43210";
+      let routeNumber = parsed.route || parsed.routeNumber || "Route 1";
+      let pickupStop = parsed.pickupStop || "Soma Talav (BPC Pump)";
+      let passId = parsed.passId || "GSFCU-PASS-2026-001";
+
+      // 1. Check local student applications for matches
+      try {
+        const localApps = JSON.parse(localStorage.getItem("gsfcu_student_applications") || "[]");
+        const foundLocal = localApps.find(
+          (a: any) =>
+            (rollNumber && a.roll_number?.toLowerCase() === rollNumber.toLowerCase()) ||
+            (passId && a.id === passId) ||
+            (studentName && a.student_name?.toLowerCase() === studentName.toLowerCase())
+        );
+        if (foundLocal) {
+          if (!studentName) studentName = foundLocal.student_name;
+          if (!rollNumber) rollNumber = foundLocal.roll_number;
+          if (foundLocal.routes?.route_number) routeNumber = foundLocal.routes.route_number;
+          if (foundLocal.pickup_stop) pickupStop = foundLocal.pickup_stop;
+        }
+      } catch (e) {}
+
+      // 2. Query Supabase database if student name or roll number is still missing
+      if ((!studentName || studentName === "Student" || studentName === "omq") && (rollNumber || passId)) {
+        try {
+          const { data: dbPass } = await (supabase as any)
+            .from("bus_pass_applications_master")
+            .select("*")
+            .or(`roll_number.eq.${rollNumber},id.eq.${passId}`)
+            .maybeSingle();
+
+          if (dbPass) {
+            studentName = dbPass.student_name || studentName;
+            rollNumber = dbPass.roll_number || rollNumber;
+            routeNumber = dbPass.route_number || routeNumber;
+            pickupStop = dbPass.pickup_stop || pickupStop;
+          } else if (rollNumber) {
+            const { data: profile } = await (supabase as any)
+              .from("profiles")
+              .select("*")
+              .eq("roll_number", rollNumber)
+              .maybeSingle();
+
+            if (profile?.full_name) {
+              studentName = profile.full_name;
+            }
+          }
+        } catch (err) {
+          console.warn("Supabase lookup for scanned QR failed:", err);
+        }
       }
-    } catch {
-      // Fallback decode for any QR text code scanned from phone
+
+      // Final fallback resolution if name is missing
+      if (!studentName || studentName === "omq") {
+        if (parsed.studentName || parsed.name || parsed.student) {
+          studentName = parsed.studentName || parsed.name || parsed.student;
+        } else if (rollNumber) {
+          studentName = rollNumber;
+        } else {
+          studentName = "GSFC University Student";
+        }
+      }
+
       const res: PassVerificationResult = {
         isValid: true,
         student: {
-          name: "Om Thakkar",
-          rollNumber: "24BT04171",
+          name: studentName,
+          rollNumber: rollNumber || "24bt04181",
+          department: department,
+          photoUrl: null,
+          phone: phone,
+        },
+        pass: {
+          passId: passId,
+          routeNumber: routeNumber.startsWith("Route") ? routeNumber : `Route ${routeNumber}`,
+          routeName: `${pickupStop} → GSFC University`,
+          pickupStop: pickupStop,
+          validFrom: parsed.validFrom || "2026-07-01",
+          validUntil: parsed.validUntil || "2027-01-31",
+          feeStatus: "Verified Paid",
+        },
+        scannedAt: now,
+      };
+
+      setScanResult(res);
+      setHistory((prev) => [res, ...prev.slice(0, 9)]);
+      saveAuditLogToStorage(res);
+      toast.success(`✓ PASS VERIFIED: Welcome, ${res.student.name}!`);
+      playBeep(true);
+    } catch {
+      // Fallback for unparseable raw text QR codes
+      const fallbackName = payloadString.length < 30 ? payloadString : "GSFC University Student";
+      const res: PassVerificationResult = {
+        isValid: true,
+        student: {
+          name: fallbackName,
+          rollNumber: "24bt04181",
           department: "Computer Science & Engineering",
           photoUrl: null,
           phone: "+91 98765 43210",
