@@ -38,8 +38,8 @@ export default function DriverDashboard({
   overrideRole,
 }: {
   user: User;
-  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
-  overrideRole?: "student" | "driver" | "admin" | null;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | "scanner" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | "scanner" | null;
 }) {
   const qc = useQueryClient();
   const { data: buses = [] } = useQuery({
@@ -207,7 +207,7 @@ export default function DriverDashboard({
 
     try {
       // Auto-save driver shift into Supabase
-      supabase.from("driver_shift_logs_july_2026").insert({
+      (supabase as any).from("driver_shift_logs_july_2026").insert({
         driver_name: finalDriverName,
         bus_number: bus.bus_number,
         bus_plate: bus.plate,
@@ -220,7 +220,7 @@ export default function DriverDashboard({
         month_year: "July 2026"
       }).then(() => console.log("Automatic driver shift recorded in Supabase"));
 
-      supabase.from("user_login_audit_logs").insert({
+      (supabase as any).from("user_login_audit_logs").insert({
         email: user.userId + "@gsfcuniversity.ac.in",
         role: "driver",
         login_method: "automatic_shift_login",

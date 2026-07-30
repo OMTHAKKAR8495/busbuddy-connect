@@ -107,7 +107,7 @@ function AdminRouteComponent() {
           .eq("user_id", authData.user.id)
           .maybeSingle();
 
-        if (roleRow?.role === "admin" || roleRow?.role === "teacher") {
+        if ((roleRow?.role as string) === "admin") {
           localStorage.setItem("gsfc_admin_auth_session", JSON.stringify({ valid: true, ts: Date.now(), email: emailTrim }));
           setIsAdminAuthenticated(true);
           toast.success("✅ Admin account verified via GSFCU Supabase. Welcome!");

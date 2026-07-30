@@ -35,8 +35,8 @@ export default function StudentDashboard({
   overrideRole,
 }: {
   user: User;
-  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
-  overrideRole?: "student" | "driver" | "admin" | null;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | "scanner" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | "scanner" | null;
 }) {
   const [tab, setTab] = useState<"track" | "pass" | "alerts">("track");
 

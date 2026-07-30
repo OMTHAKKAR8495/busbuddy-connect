@@ -34,8 +34,8 @@ export default function AdminDashboard({
   overrideRole,
 }: {
   user: User;
-  onOverrideRole?: (r: "student" | "driver" | "admin" | null) => void;
-  overrideRole?: "student" | "driver" | "admin" | null;
+  onOverrideRole?: (r: "student" | "driver" | "admin" | "scanner" | null) => void;
+  overrideRole?: "student" | "driver" | "admin" | "scanner" | null;
 }) {
   const [tab, setTab] = useState<"fleet" | "passes" | "routes" | "analytics" | "attendance" | "driver-shifts">("fleet");
 
@@ -226,7 +226,7 @@ function DriverShiftAuditLogsSection() {
       ];
 
       try {
-        const { data } = await supabase.from("driver_shift_logs_july_2026").select("*").order("created_at", { ascending: false });
+        const { data } = await (supabase as any).from("driver_shift_logs_july_2026").select("*").order("created_at", { ascending: false });
         const dbShifts = data ?? [];
         const combined = [...localShifts, ...dbShifts, ...seedShifts];
         const unique = Array.from(new Map(combined.map((s) => [s.driver_name + (s.shift_start_time || "") + (s.shift_date || ""), s])).values());
@@ -394,7 +394,7 @@ function DriverShiftLogsTab() {
       ];
 
       try {
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("driver_shift_logs_july_2026")
           .select("*")
           .order("created_at", { ascending: false });

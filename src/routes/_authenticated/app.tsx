@@ -28,7 +28,7 @@ function AppRouter() {
   };
 
   const userObj = data || fallbackUser;
-  const u = userObj as never;
+  const u = userObj as { userId: string; profile: { full_name: string; roll_number: string | null; photo_url: string | null } };
 
   // ⛔ SECURITY GATE: Intercept any attempt to set admin role via override
   const handleSetOverrideRole = (role: "student" | "driver" | "admin" | "scanner" | null) => {
@@ -47,8 +47,8 @@ function AppRouter() {
   if (activeRole === "scanner")
     return (
       <ConductorScannerPage
-        onOverrideRole={handleSetOverrideRole as never}
-        overrideRole={overrideRole as never}
+        onOverrideRole={handleSetOverrideRole}
+        overrideRole={overrideRole}
       />
     );
 
@@ -56,8 +56,8 @@ function AppRouter() {
     return (
       <DriverDashboard
         user={{ ...u, role: "driver" }}
-        onOverrideRole={handleSetOverrideRole as never}
-        overrideRole={overrideRole as never}
+        onOverrideRole={handleSetOverrideRole}
+        overrideRole={overrideRole}
       />
     );
 
@@ -65,8 +65,8 @@ function AppRouter() {
   return (
     <StudentDashboard
       user={{ ...u, role: "student" }}
-      onOverrideRole={handleSetOverrideRole as never}
-      overrideRole={overrideRole as never}
+      onOverrideRole={handleSetOverrideRole}
+      overrideRole={overrideRole}
     />
   );
 }
