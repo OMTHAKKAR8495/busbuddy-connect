@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "./app-shell";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Play,
   StopCircle,
@@ -18,7 +19,11 @@ import {
   ShieldAlert,
   Navigation,
   MapPin,
-  Crosshair
+  Crosshair,
+  IdCard,
+  Edit,
+  Printer,
+  Sparkles
 } from "lucide-react";
 
 type User = { userId: string; role: "driver"; profile: { full_name: string } };
@@ -453,7 +458,7 @@ export default function DriverDashboard({
     return `${hrs > 0 ? hrs + "h " : ""}${mins}m ${s}s`;
   };
 
-  const [activeDriverTab, setActiveDriverTab] = useState<"active" | "history">("active");
+  const [activeDriverTab, setActiveDriverTab] = useState<"active" | "history" | "my-pass">("active");
   const [historyShifts, setHistoryShifts] = useState<any[]>([]);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilterRoute, setHistoryFilterRoute] = useState("");
@@ -785,6 +790,16 @@ export default function DriverDashboard({
           <Clock className="h-4 w-4 text-primary" />
           Completed Drives & Logs ({completedDrivesList.length})
         </button>
+
+        <button
+          onClick={() => setActiveDriverTab("my-pass")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs sm:text-sm font-semibold transition ${
+            activeDriverTab === "my-pass" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <IdCard className="h-4 w-4 text-emerald-500" />
+          Official Driver ID Pass
+        </button>
       </div>
 
       {activeDriverTab === "history" ? (
@@ -950,6 +965,9 @@ export default function DriverDashboard({
             </div>
           </div>
         </div>
+      ) : activeDriverTab === "my-pass" ? (
+        /* Driver Official ID Pass & Change Pass View */
+        <DriverOfficialPassView user={user} assignedBus={currentShift?.buses} assignedRoute={currentShift?.routes} />
       ) : (
         /* Active Drive Cockpit View */
         <div>
@@ -1309,3 +1327,571 @@ export default function DriverDashboard({
     </AppShell>
   );
 }
+
+// ========================================================
+// DRIVER OFFICIAL DIGITAL ID PASS & CHANGE PASS COMPONENT
+// ========================================================
+function DriverOfficialPassView({
+  user,
+  assignedBus,
+  assignedRoute,
+}: {
+  user: User;
+  assignedBus?: { bus_number?: string; plate?: string };
+  assignedRoute?: { route_number?: string; name?: string };
+}) {
+  const driverName = user.profile.full_name || "Om Thakkar";
+
+  // Read driver passes from localStorage (shared with Admin HQ)
+  const [driverPasses, setDriverPasses] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem("gsfcu_driver_id_passes");
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [
+      {
+        id: "drv-pass-101",
+        driver_name: driverName,
+        employee_id: "GSFC-DRV-101",
+        license_number: "GJ06-2018-DL9871",
+        phone_number: "+91 98250 11442",
+        blood_group: "B+",
+        assigned_bus: `${assignedBus?.bus_number || "BUS-01"} (${assignedBus?.plate || "GJ-06-AX-1001"})`,
+        assigned_route: assignedRoute?.route_number ? `Route ${assignedRoute.route_number}` : "Route R1",
+        route_name: assignedRoute?.name || "Soma Talav (BPC Pump) → GSFC University",
+        valid_from: "2026-07-01",
+        valid_until: "2027-06-30",
+        emergency_contact: "+91 94280 55112 (Family)",
+        security_badge_code: "DRV-SEC-9841",
+        status: "Active",
+      },
+    ];
+  });
+
+  // Find this driver's pass or fallback to first
+  const myPass =
+    driverPasses.find(
+      (p) =>
+        p.driver_name?.toLowerCase().includes(driverName.toLowerCase()) ||
+        driverName.toLowerCase().includes(p.driver_name?.toLowerCase())
+    ) || driverPasses[0];
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState(myPass?.driver_name || driverName);
+  const [editEmpId, setEditEmpId] = useState(myPass?.employee_id || "GSFC-DRV-101");
+  const [editLicense, setEditLicense] = useState(myPass?.license_number || "GJ06-2021-DL5542");
+  const [editPhone, setEditPhone] = useState(myPass?.phone_number || "+91 98765 43210");
+  const [editBlood, setEditBlood] = useState(myPass?.blood_group || "B+");
+  const [editEmergency, setEditEmergency] = useState(myPass?.emergency_contact || "+91 98250 99881");
+  const [editBus, setEditBus] = useState(myPass?.assigned_bus || "BUS-01 (GJ-06-AX-1001)");
+  const [editRoute, setEditRoute] = useState(myPass?.assigned_route || "Route R1");
+  const [editValidUntil, setEditValidUntil] = useState(myPass?.valid_until || "2027-06-30");
+  const [editPhoto, setEditPhoto] = useState(myPass?.photo_url || "");
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return toast.error("Photo exceeds 2MB");
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setEditPhoto(event.target?.result as string);
+      toast.success("Photo updated for pass!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveModifiedPass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) return toast.error("Driver name cannot be empty");
+
+    const updatedPass = {
+      ...myPass,
+      driver_name: editName.trim(),
+      employee_id: editEmpId.trim() || myPass.employee_id,
+      license_number: editLicense.trim() || myPass.license_number,
+      phone_number: editPhone.trim() || myPass.phone_number,
+      blood_group: editBlood,
+      emergency_contact: editEmergency.trim() || myPass.emergency_contact,
+      assigned_bus: editBus,
+      assigned_route: editRoute,
+      valid_until: editValidUntil,
+      photo_url: editPhoto || myPass.photo_url,
+    };
+
+    const updatedList = driverPasses.map((p) => (p.id === myPass.id ? updatedPass : p));
+    if (!driverPasses.some((p) => p.id === myPass.id)) {
+      updatedList.unshift(updatedPass);
+    }
+
+    setDriverPasses(updatedList);
+    try {
+      localStorage.setItem("gsfcu_driver_id_passes", JSON.stringify(updatedList));
+    } catch (err) {
+      console.error(err);
+    }
+
+    toast.success("✓ Your Driver ID Pass credentials were successfully updated!");
+    setShowEditModal(false);
+  };
+
+  const printMyPass = () => {
+    const printWin = window.open("", "_blank");
+    if (!printWin) return toast.error("Please allow popups to print your ID pass");
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>GSFCU Driver ID Pass — ${myPass.driver_name}</title>
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #0f172a; }
+            .card-container { display: flex; justify-content: center; margin-top: 30px; }
+            .id-card { width: 340px; height: 520px; border-radius: 20px; background: linear-gradient(135deg, #091e3a 0%, #102a4e 50%, #030b15 100%); color: #fff; padding: 24px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.15); page-break-inside: avoid; }
+            .header { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 14px; margin-bottom: 16px; }
+            .badge-title { font-size: 11px; letter-spacing: 2px; color: #10b981; font-weight: 800; text-transform: uppercase; }
+            .org-title { font-size: 16px; font-weight: 900; letter-spacing: 0.5px; margin-top: 3px; }
+            .photo-box { width: 90px; height: 100px; border-radius: 14px; background: #1e293b; border: 2px solid #10b981; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 36px; }
+            .photo-img { width: 100%; height: 100%; object-fit: cover; }
+            .driver-name { font-size: 19px; font-weight: 800; text-align: center; margin: 0; color: #ffffff; }
+            .emp-id { font-size: 12px; font-family: monospace; color: #38bdf8; text-align: center; font-weight: 700; margin-top: 2px; }
+            .info-grid { margin-top: 18px; font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 14px; }
+            .label { color: #94a3b8; font-size: 9px; text-transform: uppercase; font-weight: 600; }
+            .val { font-weight: 700; color: #f1f5f9; }
+            .footer-strip { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px; }
+            .status-badge { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; }
+          </style>
+        </head>
+        <body>
+          <h2 style="text-align:center; color:#0f172a; margin-bottom: 5px;">GSFC UNIVERSITY TRANSPORT AUTHORITY</h2>
+          <p style="text-align:center; color:#64748b; font-size: 12px; margin-top:0;">Official Driver Accreditation Card & Campus Transit Authorization</p>
+          <div class="card-container">
+            <div class="id-card">
+              <div class="header">
+                <div class="badge-title">OFFICIAL TRANSPORT ID PASS</div>
+                <div class="org-title">GSFC UNIVERSITY</div>
+                <div style="font-size: 9px; opacity:0.8;">Vigyan Bhavan, Fertilizernagar, Vadodara</div>
+              </div>
+              <div class="photo-box">
+                ${myPass.photo_url ? `<img src="${myPass.photo_url}" class="photo-img" />` : `👨‍✈️`}
+              </div>
+              <div class="driver-name">${myPass.driver_name}</div>
+              <div class="emp-id">${myPass.employee_id} · DRIVER PASS</div>
+              <div class="info-grid">
+                <div><div class="label">Assigned Shuttle</div><div class="val">${myPass.assigned_bus.split(" ")[0]}</div></div>
+                <div><div class="label">Route Line</div><div class="val">${myPass.assigned_route}</div></div>
+                <div><div class="label">Driving License</div><div class="val">${myPass.license_number}</div></div>
+                <div><div class="label">Blood Group</div><div class="val">${myPass.blood_group}</div></div>
+                <div><div class="label">Validity</div><div class="val">${myPass.valid_from} → ${myPass.valid_until}</div></div>
+                <div><div class="label">Emergency Contact</div><div class="val">${myPass.emergency_contact}</div></div>
+              </div>
+              <div class="footer-strip">
+                <div>
+                  <span class="status-badge">AUTHORIZED DRIVER</span>
+                  <div style="font-size: 8px; color: #94a3b8; margin-top: 4px; font-family: monospace;">CODE: ${myPass.security_badge_code}</div>
+                </div>
+                <div style="font-size: 10px; font-family: monospace; text-align: right; color:#38bdf8;">
+                  Verified Campus Gate
+                </div>
+              </div>
+            </div>
+          </div>
+          <script>window.onload = function() { window.print(); }</script>
+        </body>
+      </html>
+    `);
+    printWin.document.close();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Banner */}
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-emerald-500/10 via-primary/10 to-emerald-500/10 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono border border-emerald-500/20">
+              OFFICIAL DRIVER CREDENTIAL PORTAL
+            </span>
+            <h2 className="font-display text-2xl font-extrabold mt-1 flex items-center gap-2">
+              <IdCard className="h-6 w-6 text-primary" /> My Official Driver ID & Transit Pass
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Issued by GSFC University Transport Authority. You can view, verify QR code, or change your pass details anytime.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setEditName(myPass.driver_name);
+                setEditEmpId(myPass.employee_id);
+                setEditLicense(myPass.license_number);
+                setEditPhone(myPass.phone_number);
+                setEditBlood(myPass.blood_group);
+                setEditEmergency(myPass.emergency_contact);
+                setEditBus(myPass.assigned_bus);
+                setEditRoute(myPass.assigned_route);
+                setEditValidUntil(myPass.valid_until);
+                setEditPhoto(myPass.photo_url || "");
+                setShowEditModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition active:scale-95 shadow-sm"
+            >
+              <Edit className="h-4 w-4" /> Change / Update Pass
+            </button>
+
+            <button
+              onClick={printMyPass}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90 transition active:scale-95 shadow-md"
+            >
+              <Printer className="h-4 w-4" /> Print Physical ID
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main 2-Column Grid: Digital Card & Verification Details */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Left Column: Premium Digital ID Card */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-primary to-indigo-950 p-6 text-white shadow-2xl border border-white/10 space-y-5">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <img src="/gsfc-transit-app-logo.png" alt="GSFCU" className="h-10 w-auto rounded-xl shadow-md" />
+              <div>
+                <div className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
+                  GSFC UNIVERSITY TRANSIT AUTHORITY
+                </div>
+                <div className="text-sm font-extrabold">CAMPUS DRIVER ID PASS</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white p-2 shadow-lg">
+              <QRCodeSVG
+                value={JSON.stringify({
+                  type: "DRIVER_PASS",
+                  id: myPass.id,
+                  name: myPass.driver_name,
+                  empId: myPass.employee_id,
+                  route: myPass.assigned_route,
+                  bus: myPass.assigned_bus,
+                  validUntil: myPass.valid_until,
+                  code: myPass.security_badge_code,
+                })}
+                size={70}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 shrink-0 rounded-2xl bg-white/10 border-2 border-emerald-400 overflow-hidden flex items-center justify-center text-4xl shadow-inner">
+              {myPass.photo_url ? (
+                <img src={myPass.photo_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>👨‍✈️</span>
+              )}
+            </div>
+
+            <div>
+              <div className="text-xl font-bold">{myPass.driver_name}</div>
+              <div className="text-xs font-mono text-sky-300 font-bold mt-0.5">{myPass.employee_id}</div>
+              <div className="text-[11px] opacity-80 font-mono mt-0.5">Blood Group: {myPass.blood_group}</div>
+              <div className="mt-1.5 inline-block rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
+                ● 100% AUTHORIZED TRANSIT
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-white/10 pt-4 text-xs font-mono space-y-2 opacity-90">
+            <div className="flex justify-between">
+              <span className="opacity-70">Assigned Bus:</span>
+              <span className="font-bold">{myPass.assigned_bus}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Assigned Route:</span>
+              <span className="font-bold text-emerald-300">{myPass.assigned_route}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Driving License:</span>
+              <span>{myPass.license_number}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Pass Validity:</span>
+              <span>{myPass.valid_from} → {myPass.valid_until}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Emergency Contact:</span>
+              <span>{myPass.emergency_contact}</span>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white/10 p-2.5 text-center text-[10px] font-mono tracking-widest text-emerald-300 border border-white/5">
+            OFFICIAL SECURITY BADGE · {myPass.security_badge_code}
+          </div>
+        </div>
+
+        {/* Right Column: Information & Change Pass Option Card */}
+        <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm flex flex-col justify-between space-y-6">
+          <div className="space-y-4">
+            <div className="border-b border-border/60 pb-3">
+              <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-500" /> Digital Credentials & Verification
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Keep this ID pass active while driving campus shuttles. Security and gate scanners can scan the QR code to verify your authorization.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="rounded-xl bg-muted/40 p-3.5 space-y-1 border border-border/40">
+                <div className="font-bold text-foreground flex items-center justify-between">
+                  <span>Transport Authorization Status</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">ACTIVE & VALID</span>
+                </div>
+                <p className="text-muted-foreground text-[11px]">
+                  Accredited by GSFC University Administrative Authority for Academic Year 2026-27.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-muted/40 p-3.5 space-y-1 border border-border/40">
+                <div className="font-bold text-foreground">Need to Change Assigned Route or Bus?</div>
+                <p className="text-muted-foreground text-[11px]">
+                  If your shuttle assignment, driving license, or phone number changes, use the &quot;Change / Update Pass&quot; button below.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border/60 flex flex-col sm:flex-row gap-2.5">
+            <button
+              onClick={() => {
+                setEditName(myPass.driver_name);
+                setEditEmpId(myPass.employee_id);
+                setEditLicense(myPass.license_number);
+                setEditPhone(myPass.phone_number);
+                setEditBlood(myPass.blood_group);
+                setEditEmergency(myPass.emergency_contact);
+                setEditBus(myPass.assigned_bus);
+                setEditRoute(myPass.assigned_route);
+                setEditValidUntil(myPass.valid_until);
+                setEditPhoto(myPass.photo_url || "");
+                setShowEditModal(true);
+              }}
+              className="flex-1 rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground hover:opacity-90 transition text-center shadow-md flex items-center justify-center gap-1.5"
+            >
+              <Edit className="h-4 w-4" /> Change / Modify My Pass Details
+            </button>
+
+            <button
+              onClick={printMyPass}
+              className="rounded-xl border border-border bg-card px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted transition flex items-center justify-center gap-1.5"
+            >
+              <Printer className="h-4 w-4" /> Download Printable PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Pass Modal for Driver */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div>
+                <span className="inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary font-mono">
+                  DRIVER SELF-SERVICE DESK
+                </span>
+                <h3 className="font-display font-extrabold text-lg text-foreground mt-0.5 flex items-center gap-2">
+                  <Edit className="h-5 w-5 text-amber-500" /> Change / Update Driver Pass
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="rounded-full bg-muted p-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveModifiedPass} className="space-y-4">
+              {/* Photo Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                  Change Profile Photo (Optional)
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative h-14 w-14 shrink-0 rounded-2xl bg-muted border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                    {editPhoto ? (
+                      <img src={editPhoto} alt="Preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-2xl">👨‍✈️</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="block w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Driver Full Name & Emp ID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Driver Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Staff / Employee ID
+                  </label>
+                  <input
+                    type="text"
+                    value={editEmpId}
+                    onChange={(e) => setEditEmpId(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm font-mono outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              {/* Driving License & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Driving License (DL)
+                  </label>
+                  <input
+                    type="text"
+                    value={editLicense}
+                    onChange={(e) => setEditLicense(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm font-mono outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Mobile Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              {/* Blood Group & Emergency Contact */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Blood Group
+                  </label>
+                  <select
+                    value={editBlood}
+                    onChange={(e) => setEditBlood(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg) => (
+                      <option key={bg} value={bg}>{bg}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Emergency Contact
+                  </label>
+                  <input
+                    type="text"
+                    value={editEmergency}
+                    onChange={(e) => setEditEmergency(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              {/* Bus & Route */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Assigned Shuttle Bus
+                  </label>
+                  <select
+                    value={editBus}
+                    onChange={(e) => setEditBus(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="BUS-01 (GJ-06-AX-1001)">BUS-01 (GJ-06-AX-1001)</option>
+                    <option value="BUS-02 (GJ-06-AX-1002)">BUS-02 (GJ-06-AX-1002)</option>
+                    <option value="BUS-03 (GJ-06-AX-1003)">BUS-03 (GJ-06-AX-1003)</option>
+                    <option value="BUS-04 (GJ-06-AX-1004)">BUS-04 (GJ-06-AX-1004)</option>
+                    <option value="BUS-05 (GJ-06-AX-1005)">BUS-05 (GJ-06-AX-1005)</option>
+                    <option value="BUS-06 (GJ-06-AX-1006)">BUS-06 (GJ-06-AX-1006)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Assigned Route
+                  </label>
+                  <select
+                    value={editRoute}
+                    onChange={(e) => setEditRoute(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    {Array.from({ length: 13 }, (_, i) => `Route R${i + 1}`).map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Expiry Date */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Pass Expiry Date
+                </label>
+                <input
+                  type="date"
+                  value={editValidUntil}
+                  onChange={(e) => setEditValidUntil(e.target.value)}
+                  className="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm outline-none"
+                />
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition active:scale-95"
+                >
+                  Save Pass Updates
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
