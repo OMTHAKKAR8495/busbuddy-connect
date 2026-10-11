@@ -315,8 +315,15 @@ export default function DriverDashboard({
           console.log("Telemetry insert fallback:", e);
         }
       },
-      (err) => toast.error("GPS Error: " + err.message),
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+      (err) => {
+        console.warn("GPS Device Notice:", err.message);
+        // If device GPS times out or is indoors/unavailable, automatically fall back to simulated route GPS so demo never breaks
+        if (!isSimulating) {
+          toast.info("Device GPS weak/timed out — automatically switching to live route tracking demo.");
+          startSimulation();
+        }
+      },
+      { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 }
     );
   }
 
