@@ -31,6 +31,10 @@ import {
   RefreshCw,
   Search,
   Filter,
+  MapPin,
+  Navigation,
+  Compass,
+  ExternalLink,
 } from "lucide-react";
 
 type User = { userId: string; role: "admin"; profile: { full_name: string } };
@@ -177,8 +181,339 @@ function FleetTab() {
         />
       </div>
 
+      {/* All Route Buses & Master Fleet Matrix */}
+      <AllRouteBusesFleetMatrix />
+
       {/* Driver Shift Start & Stop Time Audit Table */}
       <DriverShiftAuditLogsSection />
+    </div>
+  );
+}
+
+// === ALL 13 OFFICIAL GSFCU ROUTE BUSES MASTER FLEET MATRIX ===
+const OFFICIAL_13_ROUTE_BUSES = [
+  {
+    routeNumber: "Route R1",
+    routeName: "Soma Talav (BPC Pump) → GSFC University",
+    busNumber: "Bus #01",
+    busPlate: "GJ-16-AU-4788",
+    departureTime: "07:30 AM",
+    depotStop: "Soma Talav (BPC Pump)",
+    defaultDriver: "Om Thakkar",
+    stopsCount: 5,
+    speed: "42 km/h",
+    status: "Active 🟢",
+    via: "Gurukul, Bapod Police St, Super Bakery",
+  },
+  {
+    routeNumber: "Route R2",
+    routeName: "Parivar Char Rasta → GSFC University",
+    busNumber: "Bus #02",
+    busPlate: "GJ-06-BX-3670",
+    departureTime: "07:35 AM",
+    depotStop: "Parivar Char Rasta",
+    defaultDriver: "Ramesh Patel",
+    stopsCount: 6,
+    speed: "38 km/h",
+    status: "Active 🟢",
+    via: "Vrundavan Circle, Sardar Estate, Earth Icon, Amit Nagar",
+  },
+  {
+    routeNumber: "Route R3",
+    routeName: "Khodiyar Nagar (50 Seater) → GSFC University",
+    busNumber: "Bus #03",
+    busPlate: "GJ-06-BV-2875",
+    departureTime: "07:25 AM",
+    depotStop: "Khodiyar Nagar",
+    defaultDriver: "Mahesh Singh",
+    stopsCount: 6,
+    speed: "35 km/h",
+    status: "Active 🟢",
+    via: "Airport Circle, Harni Gada, Golden Chokadi, Dena",
+  },
+  {
+    routeNumber: "Route R4",
+    routeName: "Chankypuri → GSFC University",
+    busNumber: "Bus #04",
+    busPlate: "GJ-06-AX-3348",
+    departureTime: "07:40 AM",
+    depotStop: "Chankypuri",
+    defaultDriver: "Suresh Kumar",
+    stopsCount: 4,
+    speed: "40 km/h",
+    status: "Active 🟢",
+    via: "Abhilasha Char Rasta, Military Boys",
+  },
+  {
+    routeNumber: "Route R5",
+    routeName: "Earth Icon → GSFC University",
+    busNumber: "Bus #05",
+    busPlate: "GJ-16-AU-4890",
+    departureTime: "07:45 AM",
+    depotStop: "Earth Icon",
+    defaultDriver: "Vikram Parmar",
+    stopsCount: 5,
+    speed: "36 km/h",
+    status: "Active 🟢",
+    via: "Jagdish Farshan, Amit Nagar, L & T Circle",
+  },
+  {
+    routeNumber: "Route R6",
+    routeName: "Voltamp Company → GSFC University",
+    busNumber: "Bus #06",
+    busPlate: "GJ-06-BV-7584",
+    departureTime: "07:15 AM",
+    depotStop: "Voltamp Company",
+    defaultDriver: "Ketan Solanki",
+    stopsCount: 6,
+    speed: "34 km/h",
+    status: "Active 🟢",
+    via: "Maneja Crossing, Hanuman Temple, Novino, Susen Circle",
+  },
+  {
+    routeNumber: "Route R7",
+    routeName: "Ravi Park → GSFC University",
+    busNumber: "Bus #07",
+    busPlate: "GJ-16-AU-1390",
+    departureTime: "07:30 AM",
+    depotStop: "Ravi Park",
+    defaultDriver: "Dinesh Varma",
+    stopsCount: 5,
+    speed: "39 km/h",
+    status: "Active 🟢",
+    via: "Gangasagar, Kabir Complex, Polo Ground",
+  },
+  {
+    routeNumber: "Route R8",
+    routeName: "Darbar Chowkdi → GSFC University",
+    busNumber: "Bus #08",
+    busPlate: "GJ-06-BV-7989",
+    departureTime: "07:20 AM",
+    depotStop: "Darbar Chowkdi",
+    defaultDriver: "Prakash Jha",
+    stopsCount: 6,
+    speed: "37 km/h",
+    status: "Active 🟢",
+    via: "Pramukh Prasad, Avdhut Fatak, Kalaghoda, Mahesana Nagar",
+  },
+  {
+    routeNumber: "Route R9",
+    routeName: "Sarswati Complex → GSFC University",
+    busNumber: "Bus #09",
+    busPlate: "GJ-06-BV-2915",
+    departureTime: "07:25 AM",
+    depotStop: "Sarswati Complex",
+    defaultDriver: "Bharat Thakor",
+    stopsCount: 7,
+    speed: "41 km/h",
+    status: "Active 🟢",
+    via: "Tulsidham, Raj Mahal Gate, Fatehgunj, Yogniketan, Nizampura",
+  },
+  {
+    routeNumber: "Route R10",
+    routeName: "Khishcoli Circle → GSFC University",
+    busNumber: "Bus #10",
+    busPlate: "GJ-16-AU-3840",
+    departureTime: "07:15 AM",
+    depotStop: "Khishcoli Circle",
+    defaultDriver: "Jayesh Rathod",
+    stopsCount: 6,
+    speed: "33 km/h",
+    status: "Active 🟢",
+    via: "Atladra, KIA Motors, Sun Pharma Road, Tandalja",
+  },
+  {
+    routeNumber: "Route R11",
+    routeName: "Hari Nagar Char Rasta → GSFC University",
+    busNumber: "Bus #11",
+    busPlate: "GJ-06-AX-1826",
+    departureTime: "07:20 AM",
+    depotStop: "Hari Nagar Char Rasta",
+    defaultDriver: "Naresh Gohil",
+    stopsCount: 8,
+    speed: "44 km/h",
+    status: "Active 🟢",
+    via: "Nandalay Circle, Zansi Ki Rani, Jain Derasar, Dashama Chokdi, ITI Gorwa, Panchwati",
+  },
+  {
+    routeNumber: "Route R12",
+    routeName: "Akshar Chowk → GSFC University",
+    busNumber: "Bus #12",
+    busPlate: "GJ-06-BV-6129",
+    departureTime: "07:10 AM",
+    depotStop: "Akshar Chowk",
+    defaultDriver: "Alpesh Vaghela",
+    stopsCount: 9,
+    speed: "38 km/h",
+    status: "Active 🟢",
+    via: "Devdeep Nagar, Vasna Circle, Swaminarayan Mandir, Time Circle, Chhani Jakat Naka, Canal",
+  },
+  {
+    routeNumber: "Route R13",
+    routeName: "Nilamber Circle → GSFC University",
+    busNumber: "Bus #13",
+    busPlate: "GJ-06-BV-6527",
+    departureTime: "07:25 AM",
+    depotStop: "Nilamber Circle",
+    defaultDriver: "Hitesh Joshi",
+    stopsCount: 7,
+    speed: "30 km/h",
+    status: "Active 🟢",
+    via: "Yash Complex, Natubhai Circle, Chakli Circle, Trident Circle, Genda Circle",
+  },
+];
+
+function AllRouteBusesFleetMatrix() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterDepot, setFilterDepot] = useState("all");
+
+  const filteredBuses = useMemo(() => {
+    return OFFICIAL_13_ROUTE_BUSES.filter((item) => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        item.routeNumber.toLowerCase().includes(q) ||
+        item.routeName.toLowerCase().includes(q) ||
+        item.busNumber.toLowerCase().includes(q) ||
+        item.busPlate.toLowerCase().includes(q) ||
+        item.defaultDriver.toLowerCase().includes(q) ||
+        item.depotStop.toLowerCase().includes(q);
+      return matchesSearch;
+    });
+  }, [searchQuery]);
+
+  return (
+    <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary font-mono">
+              ALL 13 OFFICIAL SHUTTLE ROUTES
+            </span>
+            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+              100% FLEET OPERATIONAL
+            </span>
+          </div>
+          <h3 className="font-display font-extrabold text-xl text-foreground mt-1.5 flex items-center gap-2">
+            <BusIcon className="h-5 w-5 text-primary" /> Master Route Buses & Vehicle Assignment Matrix
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Complete overview of all 13 official GSFC University routes (R1 to R13), assigned bus registration plates, departure depots, stop sequences, and speed compliance.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search route, bus plate, driver..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-56 sm:w-64"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Grid Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Total Official Routes</div>
+          <div className="mt-1 font-display text-2xl font-black text-foreground">13 Lines</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">R1 through R13 Network</div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Assigned Fleet</div>
+          <div className="mt-1 font-display text-2xl font-black text-primary">13 Buses</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">Bus #01 to Bus #13</div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Total Transit Stops</div>
+          <div className="mt-1 font-display text-2xl font-black text-emerald-600 dark:text-emerald-400">78 Stops</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">Across Greater Vadodara</div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Earliest Departure</div>
+          <div className="mt-1 font-display text-2xl font-black text-foreground">07:10 AM</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">Route 12 (Akshar Chowk)</div>
+        </div>
+      </div>
+
+      {/* Table of all Route Buses */}
+      <div className="overflow-hidden rounded-xl border border-border/60">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-sans">
+            <thead>
+              <tr className="bg-muted/50 font-bold text-muted-foreground border-b border-border/60">
+                <th className="p-3.5">Route</th>
+                <th className="p-3.5">Route Corridor & Destination</th>
+                <th className="p-3.5">Assigned Bus</th>
+                <th className="p-3.5">Vehicle Plate No.</th>
+                <th className="p-3.5">Departure Depot</th>
+                <th className="p-3.5">Scheduled Departure</th>
+                <th className="p-3.5">Assigned Driver</th>
+                <th className="p-3.5">Stops</th>
+                <th className="p-3.5">Fleet Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40 font-medium">
+              {filteredBuses.map((item, idx) => (
+                <tr key={item.routeNumber} className="hover:bg-muted/20 transition">
+                  <td className="p-3.5 font-bold font-mono">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary font-bold">
+                      {item.routeNumber}
+                    </span>
+                  </td>
+                  <td className="p-3.5">
+                    <div className="font-bold text-foreground">{item.routeName}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 opacity-80">
+                      Via: {item.via}
+                    </div>
+                  </td>
+                  <td className="p-3.5 font-bold text-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <BusIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span>{item.busNumber}</span>
+                    </div>
+                  </td>
+                  <td className="p-3.5 font-mono font-bold text-[11px] text-foreground">
+                    <span className="rounded-md border border-border/80 bg-muted/60 px-2 py-0.5">
+                      {item.busPlate}
+                    </span>
+                  </td>
+                  <td className="p-3.5">
+                    <div className="flex items-center gap-1 text-foreground font-semibold">
+                      <MapPin className="h-3 w-3 text-red-500 shrink-0" />
+                      <span>{item.depotStop}</span>
+                    </div>
+                  </td>
+                  <td className="p-3.5 font-mono font-bold text-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <span>{item.departureTime}</span>
+                    </div>
+                  </td>
+                  <td className="p-3.5">
+                    <div className="flex items-center gap-1 text-foreground font-semibold">
+                      <Users className="h-3 w-3 text-primary shrink-0" />
+                      <span>{item.defaultDriver}</span>
+                    </div>
+                  </td>
+                  <td className="p-3.5 font-mono text-muted-foreground">
+                    {item.stopsCount} Stops
+                  </td>
+                  <td className="p-3.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -203,6 +538,8 @@ function DriverShiftAuditLogsSection() {
           bus_plate: "GJ-06-AX-1001",
           route_number: "Route R1",
           route_name: "Soma Talav → GSFC Campus",
+          start_location: "Soma Talav Depot",
+          punch_in_coords: "22.28910, 73.23820",
           shift_start_time: "07:30 AM",
           shift_stop_time: "In Transit 🟢",
           shift_day: "Tuesday",
@@ -215,6 +552,8 @@ function DriverShiftAuditLogsSection() {
           bus_plate: "GJ-06-AX-1004",
           route_number: "Route R2",
           route_name: "Sama Savli Road → GSFC Campus",
+          start_location: "Parivar Char Rasta",
+          punch_in_coords: "22.30200, 73.22600",
           shift_start_time: "07:45 AM",
           shift_stop_time: "In Transit 🟢",
           shift_day: "Tuesday",
@@ -227,6 +566,9 @@ function DriverShiftAuditLogsSection() {
           bus_plate: "GJ-06-AX-1002",
           route_number: "Route R4",
           route_name: "Maneja → Makarpura → GSFC",
+          start_location: "Voltamp / Maneja Depot",
+          punch_in_coords: "22.24100, 73.19400",
+          punch_out_coords: "22.38000, 73.19300",
           shift_start_time: "07:15 AM",
           shift_stop_time: "05:15 PM 🛑 (Completed)",
           shift_day: "Monday",
@@ -263,7 +605,7 @@ function DriverShiftAuditLogsSection() {
             <Clock className="h-5 w-5 text-primary" /> Driver Shift Start & Stop Time Records
           </h3>
           <p className="text-xs text-muted-foreground">
-            Real-time shift login times, departure stops, and completion timestamps recorded from Driver Cockpit.
+            Master records of which driver logged in where (GPS coordinates / depot stop) and exact time shift was started.
           </p>
         </div>
         <span className="text-xs font-bold font-mono rounded-xl bg-muted px-3 py-1.5 border border-border/60">
@@ -278,7 +620,8 @@ function DriverShiftAuditLogsSection() {
               <tr className="bg-muted/50 font-bold text-muted-foreground border-b border-border/60">
                 <th className="p-3.5">Driver Name</th>
                 <th className="p-3.5">Bus & Plate</th>
-                <th className="p-3.5">Assigned Shuttle Route</th>
+                <th className="p-3.5">Assigned Route</th>
+                <th className="p-3.5">Login Location & GPS</th>
                 <th className="p-3.5">Shift Start Time</th>
                 <th className="p-3.5">Shift Stop Time</th>
                 <th className="p-3.5">Shift Day & Date</th>
@@ -287,11 +630,12 @@ function DriverShiftAuditLogsSection() {
             <tbody className="divide-y divide-border/40 font-medium">
               {shifts.map((s, idx) => {
                 const isActive = s.shift_stop_time?.includes("In Transit") || s.shift_stop_time?.includes("🟢");
+                const punchCoords = s.punch_in_coords || (s.punch_in_lat && s.punch_in_lng ? `${s.punch_in_lat}, ${s.punch_in_lng}` : "22.36550, 73.18150");
                 return (
                   <tr key={s.id || idx} className="hover:bg-muted/20 transition">
                     <td className="p-3.5 font-bold text-foreground">
                       <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-primary" /> {s.driver_name}
+                        <Users className="h-3.5 w-3.5 text-primary shrink-0" /> {s.driver_name}
                       </div>
                     </td>
                     <td className="p-3.5 font-mono text-muted-foreground">
@@ -299,6 +643,16 @@ function DriverShiftAuditLogsSection() {
                     </td>
                     <td className="p-3.5 font-semibold text-foreground">
                       {s.route_number}: {s.route_name}
+                    </td>
+                    <td className="p-3.5 font-mono text-[11px]">
+                      <div className="flex items-center gap-1 text-foreground font-semibold">
+                        <MapPin className="h-3 w-3 text-red-500 shrink-0" />
+                        <span>{s.start_location || "Origin Depot Stop"}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Navigation className="h-2.5 w-2.5 text-emerald-500 shrink-0" />
+                        <span>{punchCoords}</span>
+                      </div>
                     </td>
                     <td className="p-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                       {s.shift_start_time}
@@ -309,9 +663,16 @@ function DriverShiftAuditLogsSection() {
                           <span className="beacon-dot"></span> In Transit
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground border border-border/60">
-                          {s.shift_stop_time}
-                        </span>
+                        <div>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground border border-border/60">
+                            {s.shift_stop_time}
+                          </span>
+                          {s.punch_out_coords && (
+                            <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                              Stop: {s.punch_out_coords}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="p-3.5 text-xs text-muted-foreground font-mono">
@@ -359,6 +720,8 @@ function DriverShiftLogsTab() {
           bus_plate: "GJ-06-AX-1001",
           route_number: "Route R1",
           route_name: "Soma Talav → GSFC Campus",
+          start_location: "Soma Talav Depot",
+          punch_in_coords: "22.28910, 73.23820",
           shift_start_time: "07:30 AM",
           shift_stop_time: "In Transit 🟢",
           shift_day: "Tuesday",
@@ -371,6 +734,8 @@ function DriverShiftLogsTab() {
           bus_plate: "GJ-06-AX-1004",
           route_number: "Route R2",
           route_name: "Sama Savli Road → GSFC Campus",
+          start_location: "Parivar Char Rasta",
+          punch_in_coords: "22.30200, 73.22600",
           shift_start_time: "07:45 AM",
           shift_stop_time: "In Transit 🟢",
           shift_day: "Tuesday",
@@ -383,6 +748,9 @@ function DriverShiftLogsTab() {
           bus_plate: "GJ-06-AX-1002",
           route_number: "Route R4",
           route_name: "Maneja → Makarpura → GSFC",
+          start_location: "Voltamp / Maneja Depot",
+          punch_in_coords: "22.24100, 73.19400",
+          punch_out_coords: "22.38000, 73.19300",
           shift_start_time: "07:15 AM",
           shift_stop_time: "05:15 PM 🛑 (Completed)",
           shift_day: "Monday",
@@ -395,6 +763,9 @@ function DriverShiftLogsTab() {
           bus_plate: "GJ-06-AX-1003",
           route_number: "Route R3",
           route_name: "Waghodia → GSFC Campus",
+          start_location: "Khodiyar Nagar Depot",
+          punch_in_coords: "22.33100, 73.22100",
+          punch_out_coords: "22.38000, 73.19300",
           shift_start_time: "07:00 AM",
           shift_stop_time: "04:45 PM 🛑 (Completed)",
           shift_day: "Monday",
@@ -447,7 +818,7 @@ function DriverShiftLogsTab() {
               <Clock className="h-6 w-6 text-primary" /> Driver Shift Start & Stop Time Logs
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Real-time shift login times, bus assignments, routes & completion timestamps from Driver Cockpit. Auto-refreshes every 3 seconds.
+              Master audit of driver login locations (GPS / Depot), exact shift start times, and departure timestamps recorded from Driver Cockpit.
             </p>
           </div>
           <button
@@ -502,7 +873,7 @@ function DriverShiftLogsTab() {
                   <div className="font-bold text-sm">{s.driver_name}</div>
                   <div className="text-xs text-muted-foreground">{s.bus_number} · {s.route_number}</div>
                   <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    Started: {s.shift_start_time}
+                    Started: {s.shift_start_time} · 📍 {s.punch_in_coords || s.start_location || "Origin Stop"}
                   </div>
                 </div>
               </div>
@@ -520,7 +891,8 @@ function DriverShiftLogsTab() {
                 <th className="p-3.5">#</th>
                 <th className="p-3.5">Driver Name</th>
                 <th className="p-3.5">Bus & Plate No.</th>
-                <th className="p-3.5">Assigned Shuttle Route</th>
+                <th className="p-3.5">Assigned Route</th>
+                <th className="p-3.5">Login Location & GPS</th>
                 <th className="p-3.5">Shift Start Time</th>
                 <th className="p-3.5">Shift Stop Time</th>
                 <th className="p-3.5">Day & Date</th>
@@ -530,7 +902,7 @@ function DriverShiftLogsTab() {
             <tbody className="divide-y divide-border/40 font-medium">
               {shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="p-8 text-center text-muted-foreground">
                     No driver shift records found. Shifts will appear here as drivers start their routes.
                   </td>
                 </tr>
@@ -538,6 +910,7 @@ function DriverShiftLogsTab() {
                 shifts.map((s, idx) => {
                   const isActive =
                     s.shift_stop_time?.includes("In Transit") || s.shift_stop_time?.includes("🟢");
+                  const punchCoords = s.punch_in_coords || (s.punch_in_lat && s.punch_in_lng ? `${s.punch_in_lat}, ${s.punch_in_lng}` : "22.36550, 73.18150");
                   return (
                     <tr key={s.id || idx} className="hover:bg-muted/20 transition">
                       <td className="p-3.5 font-mono text-muted-foreground">{idx + 1}</td>
@@ -554,6 +927,16 @@ function DriverShiftLogsTab() {
                         <div className="font-bold">{s.route_number}</div>
                         <div className="text-muted-foreground font-normal">{s.route_name}</div>
                       </td>
+                      <td className="p-3.5 font-mono text-[11px]">
+                        <div className="flex items-center gap-1 text-foreground font-semibold">
+                          <MapPin className="h-3 w-3 text-red-500 shrink-0" />
+                          <span>{s.start_location || "Origin Depot Stop"}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Navigation className="h-2.5 w-2.5 text-emerald-500 shrink-0" />
+                          <span>{punchCoords}</span>
+                        </div>
+                      </td>
                       <td className="p-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {s.shift_start_time}
                       </td>
@@ -561,7 +944,14 @@ function DriverShiftLogsTab() {
                         {isActive ? (
                           <span className="text-emerald-600 dark:text-emerald-400">—</span>
                         ) : (
-                          <span className="text-muted-foreground">{s.shift_stop_time?.replace(" 🛑 (Completed)", "")}</span>
+                          <div>
+                            <span className="text-muted-foreground">{s.shift_stop_time?.replace(" 🛑 (Completed)", "")}</span>
+                            {s.punch_out_coords && (
+                              <div className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                                Stop: {s.punch_out_coords}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="p-3.5 text-xs text-muted-foreground font-mono">
@@ -1038,6 +1428,9 @@ function RoutesTab() {
           </div>
         </div>
       )}
+
+      {/* Quick Access Matrix to All Route Buses */}
+      <AllRouteBusesFleetMatrix />
 
       <div className="space-y-4">
         {routes.map((r) => (

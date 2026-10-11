@@ -35,3 +35,5 @@ dist-ssr
 _secrets/
 .env
 .neon
+.vercel
+.env*
