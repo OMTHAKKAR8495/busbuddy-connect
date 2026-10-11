@@ -57,34 +57,69 @@ export default function AdminDashboard({
       onOverrideRole={onOverrideRole}
       overrideRole={overrideRole}
     >
-      <div className="mb-4 flex gap-2 rounded-xl bg-muted p-1.5 border border-border/60 overflow-x-auto">
-        {[
-          { k: "fleet", l: "Fleet Command Map", i: Activity },
-          { k: "driver-id-passes", l: "Driver ID & Pass Manager", i: IdCard },
-          { k: "passes", l: "Student Pass Management", i: Users },
-          { k: "routes", l: "Route & Stop Manager", i: RouteIcon },
-          { k: "driver-shifts", l: "Driver Shift Logs", i: Clock },
-          { k: "attendance", l: "Student Attendance & CSV", i: FileCheck },
-          { k: "analytics", l: "Fleet Analytics", i: BarChart3 },
-        ].map((t) => (
-          <button
-            key={t.k}
-            onClick={() => setTab(t.k as never)}
-            className={`flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold transition ${tab === t.k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <t.i className="h-4 w-4" /> {t.l}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+        {/* Left Sidebar Navigation */}
+        <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-20 z-10">
+          <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-sm backdrop-blur-md">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+              <Activity className="h-3.5 w-3.5 text-primary" />
+              <span>Admin Modules</span>
+            </div>
 
-      {tab === "fleet" && <FleetTab />}
-      {tab === "driver-id-passes" && <DriverIdPassesTab />}
-      {tab === "passes" && <PassesTab />}
-      {tab === "routes" && <RoutesTab />}
-      {tab === "driver-shifts" && <DriverShiftLogsTab />}
-      {tab === "attendance" && <AttendancePanel />}
-      {tab === "analytics" && <AnalyticsTab />}
+            <nav className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 scrollbar-none">
+              {[
+                { k: "fleet", l: "Fleet Command Map", i: Activity, desc: "Realtime GPS & buses" },
+                { k: "driver-id-passes", l: "Driver ID & Pass Manager", i: IdCard, desc: "Credentials & licenses" },
+                { k: "passes", l: "Student Pass Management", i: Users, desc: "Verifications & fees" },
+                { k: "routes", l: "Route & Stop Manager", i: RouteIcon, desc: "All 13 campus routes" },
+                { k: "driver-shifts", l: "Driver Shift Logs", i: Clock, desc: "Shift times & audits" },
+                { k: "attendance", l: "Student Attendance & CSV", i: FileCheck, desc: "Boarding & scan history" },
+                { k: "analytics", l: "Fleet Analytics", i: BarChart3, desc: "Fleet telemetry metrics" },
+              ].map((t) => {
+                const isActive = tab === t.k;
+                return (
+                  <button
+                    key={t.k}
+                    onClick={() => setTab(t.k as never)}
+                    className={`group flex shrink-0 lg:w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all text-left ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    }`}
+                  >
+                    <t.i
+                      className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${
+                        isActive ? "text-primary-foreground" : "text-primary"
+                      }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate">{t.l}</div>
+                      <div
+                        className={`hidden lg:block text-[10px] font-normal truncate mt-0.5 ${
+                          isActive ? "text-primary-foreground/80" : "text-muted-foreground"
+                        }`}
+                      >
+                        {t.desc}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <section className="flex-1 w-full min-w-0">
+          {tab === "fleet" && <FleetTab />}
+          {tab === "driver-id-passes" && <DriverIdPassesTab />}
+          {tab === "passes" && <PassesTab />}
+          {tab === "routes" && <RoutesTab />}
+          {tab === "driver-shifts" && <DriverShiftLogsTab />}
+          {tab === "attendance" && <AttendancePanel />}
+          {tab === "analytics" && <AnalyticsTab />}
+        </section>
+      </div>
     </AppShell>
   );
 }
