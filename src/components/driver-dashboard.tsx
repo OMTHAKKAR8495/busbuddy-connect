@@ -222,26 +222,31 @@ export default function DriverDashboard({
     }
 
     try {
-      // Auto-save driver shift into Supabase
+      // Auto-save driver shift into Neon/Supabase DB
       (supabase as any).from("driver_shift_logs_july_2026").insert({
+        id: shiftLogObj.id.startsWith("shift-") ? undefined : shiftLogObj.id,
         driver_name: finalDriverName,
         bus_number: bus.bus_number,
         bus_plate: bus.plate,
         route_number: bus.routes?.route_number || "Route R1",
         route_name: bus.routes?.name || "Soma Talav → GSFC Campus",
-        start_location: "Depot / Origin Stop",
+        start_location: bus.routes?.name ? bus.routes.name.split("→")[0].trim() : "Soma Talav Depot",
+        punch_in_lat: Number(startLat.toFixed(5)),
+        punch_in_lng: Number(startLng.toFixed(5)),
+        punch_in_coords: punchInCoordsFormatted,
         shift_start_time: startTimeStr,
         shift_stop_time: "In Transit 🟢",
         shift_day: shiftDayStr,
+        shift_date: shiftDateStr,
         month_year: "July 2026"
-      }).then(() => console.log("Automatic driver shift recorded in Supabase"));
+      }).then(() => console.log("Automatic driver shift recorded in database"));
 
       (supabase as any).from("user_login_audit_logs").insert({
         email: user.userId + "@gsfcuniversity.ac.in",
         role: "driver",
         login_method: "automatic_shift_login",
         status: "success"
-      }).then(() => console.log("Login audit recorded in Supabase"));
+      }).then(() => console.log("Login audit recorded in database"));
 
       supabase.from("trips").insert({
         bus_id: bus.id,
@@ -286,6 +291,23 @@ export default function DriverDashboard({
       localStorage.setItem("gsfcu_driver_shifts", JSON.stringify(updatedShifts));
     } catch (e) {
       console.error("Shift end update:", e);
+    }
+
+    try {
+      // Update shift end in database
+      (supabase as any)
+        .from("driver_shift_logs_july_2026")
+        .update({
+          shift_stop_time: `${stopTimeStr} 🛑 (Completed)`,
+          punch_out_lat: Number(stopLat.toFixed(5)),
+          punch_out_lng: Number(stopLng.toFixed(5)),
+          punch_out_coords: `${stopLat.toFixed(5)}, ${stopLng.toFixed(5)}`,
+        })
+        .eq("driver_name", finalDriverName)
+        .eq("shift_stop_time", "In Transit 🟢")
+        .then(() => console.log("Driver shift stop updated in database"));
+    } catch (e) {
+      console.log("Shift stop update err:", e);
     }
 
     if (activeTrip) {
