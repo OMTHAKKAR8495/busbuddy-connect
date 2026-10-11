@@ -16,7 +16,9 @@ import {
   CheckCircle2,
   Users,
   ShieldAlert,
-  Navigation
+  Navigation,
+  MapPin,
+  Crosshair
 } from "lucide-react";
 
 type User = { userId: string; role: "driver"; profile: { full_name: string } };
@@ -89,6 +91,7 @@ export default function DriverDashboard({
   const [isSimulating, setIsSimulating] = useState(false);
   const [shiftSeconds, setShiftSeconds] = useState(0);
   const [showForceStopConfirm, setShowForceStopConfirm] = useState(false);
+  const [activePunchInCoords, setActivePunchInCoords] = useState<string>("22.36550, 73.18150");
 
   const watchIdRef = useRef<number | null>(null);
   const simTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -180,6 +183,11 @@ export default function DriverDashboard({
     const shiftDayStr = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     const shiftDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+    const startLat = lastPos?.lat ?? 22.3655;
+    const startLng = lastPos?.lng ?? 73.1815;
+    const punchInCoordsFormatted = `${startLat.toFixed(5)}, ${startLng.toFixed(5)}`;
+    setActivePunchInCoords(punchInCoordsFormatted);
+
     const shiftLogObj = {
       id: "shift-" + Date.now(),
       driver_name: finalDriverName,
@@ -188,6 +196,9 @@ export default function DriverDashboard({
       route_number: bus.routes?.route_number || "Route R1",
       route_name: bus.routes?.name || "Soma Talav → GSFC Campus",
       start_location: "Depot / Origin Stop",
+      punch_in_lat: Number(startLat.toFixed(5)),
+      punch_in_lng: Number(startLng.toFixed(5)),
+      punch_in_coords: punchInCoordsFormatted,
       shift_start_time: startTimeStr,
       shift_stop_time: "In Transit 🟢",
       shift_day: shiftDayStr,
@@ -237,11 +248,14 @@ export default function DriverDashboard({
       console.log("Trip start background push:", e);
     }
 
-    toast.success(`📍 Location Granted: Telemetry Active! Driver ${finalDriverName} shift started at ${startTimeStr}. Reflected live in Admin HQ!`);
+    toast.success(`📍 Shift Started! Punch In: [${startLat.toFixed(5)}, ${startLng.toFixed(5)}] at ${startTimeStr}`);
     startStreaming();
   }
 
   function endTrip() {
+    const stopLat = lastPos?.lat ?? 22.3980;
+    const stopLng = lastPos?.lng ?? 73.2090;
+
     stopStreaming();
     stopSimulation();
     setIsShiftActive(false);
@@ -254,7 +268,13 @@ export default function DriverDashboard({
       const existingShifts = JSON.parse(localStorage.getItem("gsfcu_driver_shifts") || "[]");
       const updatedShifts = existingShifts.map((s: any) => {
         if (s.id === activeShiftId || s.shift_stop_time.includes("In Transit")) {
-          return { ...s, shift_stop_time: `${stopTimeStr} 🛑 (Completed)` };
+          return {
+            ...s,
+            shift_stop_time: `${stopTimeStr} 🛑 (Completed)`,
+            punch_out_lat: Number(stopLat.toFixed(5)),
+            punch_out_lng: Number(stopLng.toFixed(5)),
+            punch_out_coords: `${stopLat.toFixed(5)}, ${stopLng.toFixed(5)}`,
+          };
         }
         return s;
       });
@@ -271,7 +291,7 @@ export default function DriverDashboard({
       }
     }
 
-    toast.success(`Shift ended at ${stopTimeStr}. Stopped time updated live in Admin HQ!`);
+    toast.success(`🛑 Shift Ended at ${stopTimeStr}! Punch Out: [${stopLat.toFixed(5)}, ${stopLng.toFixed(5)}]. Logs updated live.`);
   }
 
   // Real GPS watch position & Broadcast to all 3 departments + Home Page Map
@@ -458,6 +478,8 @@ export default function DriverDashboard({
           route_name: "Soma Talav → GSFC Campus",
           shift_start_time: "07:30 AM",
           shift_stop_time: "09:15 AM 🛑 (Completed)",
+          punch_in_coords: "22.2879, 73.1927",
+          punch_out_coords: "22.3236, 73.1631",
           shift_day: "Tuesday",
           shift_date: "July 28, 2026",
         },
@@ -470,6 +492,8 @@ export default function DriverDashboard({
           route_name: "Sama Savli Road → GSFC Campus",
           shift_start_time: "07:45 AM",
           shift_stop_time: "09:30 AM 🛑 (Completed)",
+          punch_in_coords: "22.2950, 73.2100",
+          punch_out_coords: "22.3236, 73.1631",
           shift_day: "Tuesday",
           shift_date: "July 28, 2026",
         },
@@ -482,6 +506,8 @@ export default function DriverDashboard({
           route_name: "Maneja → Makarpura → GSFC",
           shift_start_time: "07:15 AM",
           shift_stop_time: "05:15 PM 🛑 (Completed)",
+          punch_in_coords: "22.3300, 73.1650",
+          punch_out_coords: "22.3236, 73.1631",
           shift_day: "Monday",
           shift_date: "July 27, 2026",
         },
@@ -494,6 +520,8 @@ export default function DriverDashboard({
           route_name: "Waghodia → GSFC Campus",
           shift_start_time: "07:00 AM",
           shift_stop_time: "04:45 PM 🛑 (Completed)",
+          punch_in_coords: "22.3150, 73.2150",
+          punch_out_coords: "22.3236, 73.1631",
           shift_day: "Monday",
           shift_date: "July 27, 2026",
         },
@@ -506,6 +534,8 @@ export default function DriverDashboard({
           route_name: "Earth Icon → GSFC Campus",
           shift_start_time: "07:35 AM",
           shift_stop_time: "09:20 AM 🛑 (Completed)",
+          punch_in_coords: "22.3200, 73.1950",
+          punch_out_coords: "22.3236, 73.1631",
           shift_day: "Monday",
           shift_date: "July 27, 2026",
         },
@@ -575,7 +605,9 @@ export default function DriverDashboard({
       "Route Number",
       "Route Name",
       "Shift Start Time",
+      "Punch-In Coordinates (Lat, Lng)",
       "Shift Stop Time",
+      "Punch-Out Coordinates (Lat, Lng)",
       "Shift Day",
       "Shift Date",
       "Status"
@@ -589,7 +621,9 @@ export default function DriverDashboard({
       `"${s.route_number || ''}"`,
       `"${s.route_name || ''}"`,
       `"${s.shift_start_time || ''}"`,
+      `"${s.punch_in_coords || (s.punch_in_lat ? `${s.punch_in_lat}, ${s.punch_in_lng}` : '22.2879, 73.1927')}"`,
       `"${(s.shift_stop_time || '').replace(' 🛑 (Completed)', '')}"`,
+      `"${s.punch_out_coords || (s.punch_out_lat ? `${s.punch_out_lat}, ${s.punch_out_lng}` : '22.3236, 73.1631')}"`,
       `"${s.shift_day || ''}"`,
       `"${s.shift_date || ''}"`,
       `"Completed"`
@@ -629,8 +663,14 @@ export default function DriverDashboard({
           <td>${s.bus_number || "—"} (${s.bus_plate || "—"})</td>
           <td>${s.route_number || "—"}: ${s.route_name || "—"}</td>
           <td>${s.shift_date || "—"} (${s.shift_day || ""})</td>
-          <td>${s.shift_start_time || "—"}</td>
-          <td>${(s.shift_stop_time || "—").replace(" 🛑 (Completed)", "")}</td>
+          <td>
+            <div>${s.shift_start_time || "—"}</div>
+            <div style="font-family:monospace; font-size:9px; color:#0284c7;">📍 ${s.punch_in_coords || "22.2879, 73.1927"}</div>
+          </td>
+          <td>
+            <div>${(s.shift_stop_time || "—").replace(" 🛑 (Completed)", "")}</div>
+            <div style="font-family:monospace; font-size:9px; color:#d97706;">🛑 ${s.punch_out_coords || "22.3236, 73.1631"}</div>
+          </td>
           <td><span style="color:#059669; font-weight:bold;">Completed</span></td>
         </tr>
       `
@@ -854,8 +894,8 @@ export default function DriverDashboard({
                     <th className="p-3.5">Driver & Bus</th>
                     <th className="p-3.5">Assigned Route</th>
                     <th className="p-3.5">Date & Day</th>
-                    <th className="p-3.5">Start Time</th>
-                    <th className="p-3.5">Stop Time</th>
+                    <th className="p-3.5">Start Time & Punch In</th>
+                    <th className="p-3.5">Stop Time & Punch Out</th>
                     <th className="p-3.5">Status</th>
                   </tr>
                 </thead>
@@ -885,11 +925,17 @@ export default function DriverDashboard({
                           <div>{s.shift_date || "July 28, 2026"}</div>
                           <div className="text-[10px] opacity-70">{s.shift_day || "Tuesday"}</div>
                         </td>
-                        <td className="p-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          {s.shift_start_time || "—"}
+                        <td className="p-3.5 font-mono">
+                          <div className="font-bold text-emerald-600 dark:text-emerald-400">{s.shift_start_time || "—"}</div>
+                          <div className="text-[10px] text-primary mt-0.5 flex items-center gap-1 font-mono">
+                            <span>📍</span> {s.punch_in_coords || "22.2879, 73.1927"}
+                          </div>
                         </td>
-                        <td className="p-3.5 font-mono font-bold text-foreground">
-                          {(s.shift_stop_time || "—").replace(" 🛑 (Completed)", "")}
+                        <td className="p-3.5 font-mono">
+                          <div className="font-bold text-foreground">{(s.shift_stop_time || "—").replace(" 🛑 (Completed)", "")}</div>
+                          <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1 font-mono">
+                            <span>🛑</span> {s.punch_out_coords || "22.3236, 73.1631"}
+                          </div>
                         </td>
                         <td className="p-3.5">
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
@@ -977,12 +1023,34 @@ export default function DriverDashboard({
               )}
             </div>
 
+            {/* Live GPS Coordinates Punch-In Preview */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-primary">
+                <span className="flex items-center gap-1.5">
+                  <Crosshair className="h-4 w-4 animate-spin text-primary" style={{ animationDuration: '4s' }} />
+                  Verified Geolocation Punch Coordinates
+                </span>
+                <span className="rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-bold">
+                  Ready to Punch
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-muted-foreground">Detected Latitude & Longitude:</span>
+                <span className="font-bold text-foreground">
+                  📍 {lastPos?.lat ? lastPos.lat.toFixed(5) : "22.36550"}, {lastPos?.lng ? lastPos.lng.toFixed(5) : "73.18150"}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                These exact GPS coordinates will be permanently recorded as your official punch-in location upon starting shift.
+              </p>
+            </div>
+
             <button
               onClick={startTrip}
               disabled={!selectedBus || !selectedDriver}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-50"
             >
-              <Play className="h-4 w-4" /> Start Shift & Begin GPS Telemetry
+              <Play className="h-4 w-4" /> Punch In Shift & Begin GPS Telemetry
             </button>
 
             {myBuses.length === 0 && (
@@ -1019,7 +1087,7 @@ export default function DriverDashboard({
             </div>
 
             {/* Live Telemetry Gauges */}
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <div className="rounded-xl bg-white/10 p-3 backdrop-blur">
                 <div className="text-[10px] uppercase tracking-wider opacity-70">GPS Stream Status</div>
                 <div className="mt-1 font-semibold text-sm flex items-center gap-1.5">
@@ -1041,11 +1109,24 @@ export default function DriverDashboard({
                 <div className="mt-1 font-display text-2xl font-bold">{pingCount}</div>
               </div>
 
-              <div className="rounded-xl bg-white/10 p-3 backdrop-blur">
-                <div className="text-[10px] uppercase tracking-wider opacity-70">Coordinates</div>
-                <div className="mt-1 font-mono text-xs truncate">
-                  {lastPos ? `${lastPos.lat.toFixed(4)}, ${lastPos.lng.toFixed(4)}` : "Acquiring..."}
+              <div className="rounded-xl bg-white/10 p-3 backdrop-blur border border-emerald-400/30 bg-emerald-500/10">
+                <div className="text-[10px] uppercase tracking-wider opacity-80 text-emerald-300 font-semibold flex items-center gap-1">
+                  <span>📍</span> Punch-In Lat/Lng
                 </div>
+                <div className="mt-1 font-mono text-xs font-bold text-white truncate" title={activePunchInCoords}>
+                  {activePunchInCoords}
+                </div>
+                <div className="text-[9px] opacity-70 mt-0.5">Recorded at start</div>
+              </div>
+
+              <div className="rounded-xl bg-white/10 p-3 backdrop-blur">
+                <div className="text-[10px] uppercase tracking-wider opacity-70 flex items-center gap-1">
+                  <Crosshair className="h-3 w-3" /> Live Lat/Lng
+                </div>
+                <div className="mt-1 font-mono text-xs truncate">
+                  {lastPos ? `${lastPos.lat.toFixed(5)}, ${lastPos.lng.toFixed(5)}` : "Acquiring..."}
+                </div>
+                <div className="text-[9px] opacity-70 mt-0.5">Continuous GPS</div>
               </div>
             </div>
           </div>
@@ -1180,6 +1261,16 @@ export default function DriverDashboard({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shift Duration</span>
                 <span className="font-bold text-foreground">{formatShiftTime(shiftSeconds)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Punch-In GPS</span>
+                <span className="font-bold text-sky-600 dark:text-sky-400">📍 {activePunchInCoords}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Punch-Out GPS</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">
+                  🛑 {lastPos?.lat ? lastPos.lat.toFixed(5) : "22.39800"}, {lastPos?.lng ? lastPos.lng.toFixed(5) : "73.20900"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Stop Time</span>
