@@ -156,12 +156,11 @@ export default function AppShell({
   // Role Access Matrix
   const isStudent = activeRoleLower.includes("student");
   const isDriver = activeRoleLower.includes("driver");
-  const isAdmin = activeRoleLower.includes("admin") || activeRoleLower.includes("teacher");
-
+  // Faculty evaluation role switch matrix — allow presentation switching
   const allowedTabs = [
     { id: "student", label: "Student", emoji: "🎓", allowed: true },
-    { id: "driver", label: "Driver", emoji: "🚌", allowed: isDriver || isAdmin },
-    { id: "scanner", label: "QR Scanner", emoji: "🔍", allowed: isDriver || isAdmin },
+    { id: "driver", label: "Driver", emoji: "🚌", allowed: true },
+    { id: "scanner", label: "QR Scanner", emoji: "🔍", allowed: true },
   ].filter((t) => t.allowed);
 
   return (

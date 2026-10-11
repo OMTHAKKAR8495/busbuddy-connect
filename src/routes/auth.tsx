@@ -87,6 +87,13 @@ function AuthPage() {
   // Instant demo access button handler for evaluation
   function handleDemoAccess(demoRole: "student" | "driver" | "admin") {
     toast.success(`Entering ${demoRole.toUpperCase()} Evaluation Console`);
+    if (demoRole === "admin") {
+      window.location.href = "/admin";
+      return;
+    }
+    try {
+      localStorage.setItem("gsfcu_demo_role", demoRole);
+    } catch (e) {}
     navigate({ to: "/app" });
   }
 

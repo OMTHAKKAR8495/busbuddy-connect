@@ -17,14 +17,27 @@ function AppRouter() {
   const { data } = useMyRole();
 
   // ⛔ SECURITY: Override role is restricted — "admin" override is completely blocked.
-  // Students and drivers can only switch between "student", "driver", and "scanner" views.
-  // Admin access is exclusively via /admin URL with passcode.
-  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "scanner" | null>(null);
+  // Initialize override role from demo selection if present
+  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "scanner" | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("gsfcu_demo_role");
+        if (saved === "driver" || saved === "scanner" || saved === "student") {
+          return saved;
+        }
+      } catch (e) {}
+    }
+    return null;
+  });
 
   const fallbackUser = {
-    userId: "eval-om-thakkar",
-    role: "student" as const,
-    profile: { full_name: "Om Thakkar", roll_number: "24BT04171", photo_url: null },
+    userId: overrideRole === "driver" ? "eval-driver-ramesh" : "eval-om-thakkar",
+    role: (overrideRole === "driver" ? "driver" : "student") as const,
+    profile: {
+      full_name: overrideRole === "driver" ? "Ramesh Patel" : "Om Thakkar",
+      roll_number: overrideRole === "driver" ? "DRV-101" : "24BT04171",
+      photo_url: null,
+    },
   };
 
   const userObj = data || fallbackUser;
@@ -37,6 +50,13 @@ function AppRouter() {
       window.location.href = "/admin";
       return;
     }
+    try {
+      if (role) {
+        localStorage.setItem("gsfcu_demo_role", role);
+      } else {
+        localStorage.removeItem("gsfcu_demo_role");
+      }
+    } catch (e) {}
     setOverrideRole(role as "student" | "driver" | "scanner" | null);
   };
 
