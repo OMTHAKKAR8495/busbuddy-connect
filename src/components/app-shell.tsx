@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Bus, LogOut, ShieldCheck, Award, CheckCircle2, X, FileText, Code2, QrCode, Smartphone, Monitor, Printer, DollarSign, Calendar, Sun, Moon, Lock, Eye, EyeOff } from "lucide-react";
+import { Bus, LogOut, ShieldCheck, Award, CheckCircle2, X, FileText, Code2, QrCode, Smartphone, Monitor, Printer, DollarSign, Calendar, Sun, Moon, Lock, Eye, EyeOff, Play, Apple, Zap } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,7 @@ export default function AppShell({
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [showSpecModal, setShowSpecModal] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const [mobileSimulated, setMobileSimulated] = useState(false);
 
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -506,6 +507,112 @@ export default function AppShell({
                   Close Report
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Right Sidebar Action Options */}
+      <aside
+        aria-label="Quick Actions Sidebar"
+        className="fixed right-3 sm:right-5 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-2.5 p-2 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300"
+      >
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 rounded-xl border border-border/80 bg-background/80 px-3.5 py-2 text-xs font-bold text-foreground shadow-sm transition hover:bg-muted active:scale-95"
+          title="Toggle Light / Dark Mode"
+        >
+          {isDark ? (
+            <>
+              <Sun className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
+              <span>Light Mode</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-4 w-4 text-indigo-500 fill-indigo-500 shrink-0" />
+              <span>Dark Mode</span>
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={() => setShowInstallModal(true)}
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm transition hover:bg-emerald-500/20 active:scale-95"
+          title="Download GSFCU Mobile App"
+        >
+          <Smartphone className="h-4 w-4 shrink-0 text-emerald-500" />
+          <span>Get Mobile App</span>
+        </button>
+      </aside>
+
+      {/* App Store & Play Store Download Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-6 my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
+                  <Smartphone className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display text-xl font-extrabold">Download GSFCU Mobile App</h3>
+                  <p className="text-xs text-muted-foreground">Official App Store & Google Play Store Links</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className="rounded-full bg-muted p-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href="https://apps.apple.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-3.5 text-white shadow-md hover:bg-slate-800 transition group"
+                >
+                  <Apple className="h-7 w-7 shrink-0 text-white group-hover:scale-110 transition" />
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Download on the</div>
+                    <div className="text-sm font-extrabold leading-tight">Apple App Store</div>
+                  </div>
+                </a>
+
+                <a
+                  href="https://play.google.com/store"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-emerald-600/40 bg-slate-900 p-3.5 text-white shadow-md hover:bg-slate-800 transition group"
+                >
+                  <Play className="h-7 w-7 shrink-0 text-emerald-400 fill-emerald-400 group-hover:scale-110 transition" />
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">GET IT ON</div>
+                    <div className="text-sm font-extrabold leading-tight">Google Play Store</div>
+                  </div>
+                </a>
+              </div>
+
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2 text-xs">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
+                  <Zap className="h-4 w-4 text-amber-500" /> Instant Mobile App (No App Store Login Needed)
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Open <strong>https://busbuddy-connect.vercel.app</strong> on your phone and tap <strong>Add to Home Screen</strong> to install the full mobile app instantly!
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 text-right">
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-md min-h-[40px]"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

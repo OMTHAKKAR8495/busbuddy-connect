@@ -756,6 +756,39 @@ function Landing() {
           </div>
         </div>
       )}
+
+      {/* Floating Right Sidebar Action Options */}
+      <aside
+        aria-label="Quick Actions Sidebar"
+        className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-2.5 p-2 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300"
+      >
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 rounded-xl border border-border/80 bg-background/80 px-3.5 py-2 text-xs font-bold text-foreground shadow-sm transition hover:bg-muted active:scale-95"
+          title="Toggle Light / Dark Mode"
+        >
+          {isDark ? (
+            <>
+              <Sun className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
+              <span>Light Mode</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-4 w-4 text-indigo-500 fill-indigo-500 shrink-0" />
+              <span>Dark Mode</span>
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={() => setShowInstallModal(true)}
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm transition hover:bg-emerald-500/20 active:scale-95"
+          title="Download GSFCU Mobile App"
+        >
+          <Smartphone className="h-4 w-4 shrink-0 text-emerald-500" />
+          <span>Get Mobile App</span>
+        </button>
+      </aside>
     </div>
   );
 }
