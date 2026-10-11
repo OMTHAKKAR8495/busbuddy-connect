@@ -156,6 +156,7 @@ export default function AppShell({
   // Role Access Matrix
   const isStudent = activeRoleLower.includes("student");
   const isDriver = activeRoleLower.includes("driver");
+  const isAdmin = activeRoleLower.includes("admin");
   // Faculty evaluation role switch matrix — allow presentation switching
   const allowedTabs = [
     { id: "student", label: "Student", emoji: "🎓", allowed: true },
