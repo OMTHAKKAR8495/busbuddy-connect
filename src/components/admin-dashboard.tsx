@@ -70,9 +70,8 @@ export default function AdminDashboard({
           <button
             key={t.k}
             onClick={() => setTab(t.k as never)}
-            className={`flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold transition ${
-              tab === t.k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold transition ${tab === t.k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             <t.i className="h-4 w-4" /> {t.l}
           </button>
@@ -140,7 +139,7 @@ function FleetTab() {
             [parsed.bus_id || "bus-01"]: { lat: parsed.lat, lng: parsed.lng, speed: parsed.speed, heading: parsed.heading },
           }));
         }
-      } catch (err) {}
+      } catch (err) { }
     }
 
     return () => {
@@ -1002,7 +1001,7 @@ function PassesTab() {
         .order("applied_at", { ascending: false });
 
       if (!rows?.length) return [];
-      
+
       return (rows as any[]).map((r: any) => ({
         id: r.id,
         pass_number: r.pass_number,
@@ -1030,7 +1029,7 @@ function PassesTab() {
       const updated = { ...prev, [passObj.id]: newOverride };
       try {
         localStorage.setItem("gsfcu_pass_overrides", JSON.stringify(updated));
-      } catch (e) {}
+      } catch (e) { }
       return updated;
     });
 
@@ -1044,7 +1043,7 @@ function PassesTab() {
         return item;
       });
       localStorage.setItem("gsfcu_student_applications", JSON.stringify(updatedLocal));
-    } catch (e) {}
+    } catch (e) { }
 
     // 3. Upsert into Supabase database so the record is permanently saved in the cloud DB
     const upsertPayload: any = {
@@ -1177,11 +1176,10 @@ function PassesTab() {
                   <td className="px-5 py-4">
                     <button
                       onClick={() => update(p, { fee_paid: !p.fee_paid })}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        p.fee_paid
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${p.fee_paid
                           ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                           : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                      }`}
+                        }`}
                     >
                       {p.fee_paid ? "Verified Paid" : "Unpaid"}
                     </button>
@@ -1875,11 +1873,10 @@ function AttendancePanel() {
                     <td className="p-3.5 text-slate-600 dark:text-slate-300 font-semibold">{log.scan_time}</td>
                     <td className="p-3.5">
                       <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                          log.status.includes("Boarded")
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${log.status.includes("Boarded")
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                             : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
-                        }`}
+                          }`}
                       >
                         {log.status}
                       </span>
@@ -2303,11 +2300,10 @@ function DriverIdPassesTab() {
             <button
               key={st}
               onClick={() => setFilterStatus(st)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                filterStatus === st
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${filterStatus === st
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               {st} {st !== "All" && `(${driverPasses.filter((d) => d.status === st).length})`}
             </button>
@@ -2351,13 +2347,12 @@ function DriverIdPassesTab() {
                   </div>
 
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                      pass.status === "Active"
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${pass.status === "Active"
                         ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                         : pass.status === "Suspended"
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                        : "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20"
-                    }`}
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                          : "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20"
+                      }`}
                   >
                     {pass.status}
                   </span>
