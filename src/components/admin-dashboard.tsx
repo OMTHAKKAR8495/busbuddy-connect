@@ -35,6 +35,12 @@ import {
   Navigation,
   Compass,
   ExternalLink,
+  Map,
+  Layers,
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 type User = { userId: string; role: "admin"; profile: { full_name: string } };
@@ -58,12 +64,23 @@ export default function AdminDashboard({
       overrideRole={overrideRole}
     >
       <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
-        {/* Left Sidebar Navigation */}
-        <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-20 z-10">
-          <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-sm backdrop-blur-md">
-            <div className="hidden lg:flex items-center gap-2 px-3 py-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
-              <Activity className="h-3.5 w-3.5 text-primary" />
-              <span>Admin Modules</span>
+        {/* Left Sidebar Navigation - Expanded & Professional */}
+        <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-20 z-10">
+          <div className="rounded-2xl border border-border/80 bg-card p-3.5 shadow-md backdrop-blur-md space-y-3">
+            <div className="hidden lg:flex items-center justify-between px-2 pt-1 pb-2 border-b border-border/60">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Activity className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-foreground">HQ Modules</div>
+                  <div className="text-[9px] text-muted-foreground font-mono">13 Campus Routes Live</div>
+                </div>
+              </div>
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
             </div>
 
             <nav className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 scrollbar-none">
@@ -81,19 +98,23 @@ export default function AdminDashboard({
                   <button
                     key={t.k}
                     onClick={() => setTab(t.k as never)}
-                    className={`group flex shrink-0 lg:w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all text-left ${
+                    className={`group flex shrink-0 lg:w-full items-center gap-3 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-semibold transition-all text-left ${
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 translate-x-0.5"
+                        : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                     }`}
                   >
-                    <t.i
-                      className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${
-                        isActive ? "text-primary-foreground" : "text-primary"
+                    <div
+                      className={`p-1.5 rounded-lg shrink-0 transition-colors ${
+                        isActive
+                          ? "bg-primary-foreground/15 text-primary-foreground"
+                          : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"
                       }`}
-                    />
+                    >
+                      <t.i className="h-4 w-4" />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate">{t.l}</div>
+                      <div className="truncate font-semibold tracking-tight">{t.l}</div>
                       <div
                         className={`hidden lg:block text-[10px] font-normal truncate mt-0.5 ${
                           isActive ? "text-primary-foreground/80" : "text-muted-foreground"
@@ -106,6 +127,18 @@ export default function AdminDashboard({
                 );
               })}
             </nav>
+
+            {/* Quick System Info in Sidebar Footer */}
+            <div className="hidden lg:block pt-3 border-t border-border/60 px-2 text-[11px] text-muted-foreground space-y-1.5 font-mono">
+              <div className="flex items-center justify-between text-[10px]">
+                <span>System Status</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">Online 100%</span>
+              </div>
+              <div className="flex items-center justify-between text-[10px]">
+                <span>Active Terminal</span>
+                <span className="font-bold text-foreground">Vadodara HQ</span>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -192,8 +225,12 @@ function FleetTab() {
     new Map(buses.filter((b) => b.routes?.polyline).map((b) => [b.route_id, b.routes])).values()
   );
 
+  const [showMap, setShowMap] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
+
   return (
     <div className="space-y-6">
+      {/* Top Fleet Stat Widgets */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Total Registered Fleet" value={`${buses.length} Buses`} />
         <Stat label="Active Shifts in Transit" value={`${activeTrips.length} Active`} />
@@ -201,18 +238,99 @@ function FleetTab() {
         <Stat label="Fleet Punctuality Rate" value="98.5%" />
       </div>
 
-      <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3 px-2">
-          <h3 className="font-display font-bold text-base flex items-center gap-2">
-            <Activity className="h-4 w-4 text-emerald-500" /> Fleet Command Radar Map
-          </h3>
-          <span className="text-xs text-muted-foreground">Showing Vadodara Campus Network</span>
+      {/* Fleet Command Radar Map - Optional Expandable View */}
+      <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-sm transition-all">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <Map className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-display font-bold text-base text-foreground">
+                  Fleet Command Radar Map
+                </h3>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {points.length > 0 ? `${points.length} Live Satellites` : "13 Routes Ready"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Interactive real-time GPS telemetry radar across Vadodara & GSFC University campus corridor.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {showMap && (
+              <button
+                onClick={() => setMapExpanded(!mapExpanded)}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-muted/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition"
+                title={mapExpanded ? "Reset Map Height" : "Expand Map Height"}
+              >
+                {mapExpanded ? (
+                  <>
+                    <Minimize2 className="h-3.5 w-3.5" /> Compact
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-3.5 w-3.5" /> Expand
+                  </>
+                )}
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shadow-sm ${
+                showMap
+                  ? "bg-muted text-foreground border border-border hover:bg-muted/80"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20"
+              }`}
+            >
+              {showMap ? (
+                <>
+                  <ChevronUp className="h-4 w-4" /> Hide Live Map
+                </>
+              ) : (
+                <>
+                  <Map className="h-4 w-4" /> View Live GPS Map
+                </>
+              )}
+            </button>
+          </div>
         </div>
-        <LiveMap
-          buses={points}
-          routes={routes.map((r) => ({ polyline: (r?.polyline as [number, number][]) ?? [], color: "#3b82f6" }))}
-          height={520}
-        />
+
+        {/* Collapsed State Quick Preview Bar */}
+        {!showMap ? (
+          <div className="mt-4 rounded-xl border border-dashed border-border/80 bg-muted/30 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <Navigation className="h-4 w-4 animate-spin-slow" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">Map rendering is currently on-demand</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Click &ldquo;View Live GPS Map&rdquo; to launch full Leaflet GPS radar with live speed, direction & stop nodes.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowMap(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+            >
+              Launch Live Map Radar <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl overflow-hidden border border-border/80 animate-in fade-in zoom-in-95 duration-200">
+            <LiveMap
+              buses={points}
+              routes={routes.map((r) => ({ polyline: (r?.polyline as [number, number][]) ?? [], color: "#3b82f6" }))}
+              height={mapExpanded ? 720 : 480}
+            />
+          </div>
+        )}
       </div>
 
       {/* All Route Buses & Master Fleet Matrix */}
