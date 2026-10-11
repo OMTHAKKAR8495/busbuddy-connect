@@ -35,7 +35,7 @@ import {
   Navigation,
   Compass,
   ExternalLink,
-  Map,
+  Map as MapIcon,
   Layers,
   Maximize2,
   Minimize2,
@@ -243,7 +243,7 @@ function FleetTab() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-              <Map className="h-5 w-5" />
+              <MapIcon className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ function FleetTab() {
                 </>
               ) : (
                 <>
-                  <Map className="h-4 w-4" /> View Live GPS Map
+                  <MapIcon className="h-4 w-4" /> View Live GPS Map
                 </>
               )}
             </button>
