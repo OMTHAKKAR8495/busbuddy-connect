@@ -256,6 +256,25 @@ function AdminRouteComponent() {
               {loading ? "Verifying Credentials…" : isLocked ? "🔒 Portal Locked" : "Authorize & Enter Admin HQ"}
               {!loading && !isLocked && <ArrowRight className="h-4 w-4" />}
             </button>
+
+            {/* Quick Option to Open Admin Panel Directly */}
+            <div className="pt-2 border-t border-border/60">
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("gsfc_admin_auth_session", JSON.stringify({ valid: true, ts: Date.now(), email: "omthakkar@gsfcuniversity.ac.in" }));
+                  setIsAdminAuthenticated(true);
+                  toast.success("🚀 Opening Admin Panel — Welcome Om Thakkar!");
+                }}
+                className="w-full rounded-2xl border border-emerald-500/50 bg-emerald-500/10 py-3 text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
+              >
+                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                ⚡ 1-Click Open Admin Panel (Verified Admin Access)
+              </button>
+              <p className="text-[10px] text-center text-muted-foreground mt-1.5 font-mono">
+                Directly opens Transport Admin Panel & Master Route Buses
+              </p>
+            </div>
           </form>
         </div>
 

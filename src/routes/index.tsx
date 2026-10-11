@@ -341,14 +341,6 @@ function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
-      {/* Top Banner Status Bar */}
-      <div className="border-b border-border/60 bg-muted/30 px-4 py-1.5 text-center text-xs font-medium text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="beacon-dot"></span>
-          <span className="font-semibold text-foreground">GSFC University Routes 2026-27:</span> All 13 Student Shuttle Routes Operating Normally (Vadodara Region)
-        </span>
-      </div>
-
       {/* Main Navigation Header */}
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -398,14 +390,6 @@ function Landing() {
             >
               <Smartphone className="h-4 w-4" /> Get Mobile App
             </button>
-
-            {/* Dedicated Admin Portal Link */}
-            <Link
-              to="/admin"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition"
-            >
-              <ShieldCheck className="h-4 w-4" /> Admin Portal
-            </Link>
 
             {signedIn ? (
               <Link
