@@ -130,26 +130,13 @@ function AdminRouteComponent() {
 
   if (isAdminAuthenticated) {
     return (
-      <div>
-        {/* Secure session banner */}
-        <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 text-center text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-2">
-          <ShieldCheck className="h-4 w-4" />
-          <span>Secured Admin Session: omthakkar@gsfcuniversity.ac.in — Auto-expires in 8h</span>
-          <button
-            onClick={handleSignOutAdmin}
-            className="ml-3 rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold hover:bg-amber-500/30 transition text-amber-700 dark:text-amber-300"
-          >
-            🔒 Lock Portal
-          </button>
-        </div>
-        <AdminDashboard
-          user={{
-            userId: "eval-om-thakkar",
-            role: "admin",
-            profile: { full_name: "Om Thakkar (Transport Admin)" },
-          }}
-        />
-      </div>
+      <AdminDashboard
+        user={{
+          userId: "eval-om-thakkar",
+          role: "admin",
+          profile: { full_name: "Om Thakkar (Transport Admin)" },
+        }}
+      />
     );
   }
 
