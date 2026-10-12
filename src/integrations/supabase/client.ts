@@ -148,6 +148,26 @@ export const supabase = {
         orderClause = `ORDER BY ${col} ${opts?.ascending ? "ASC" : "DESC"}`;
         return builder;
       },
+      limit: (count: number) => {
+        builder._limit = count;
+        return builder;
+      },
+      range: (from: number, to: number) => {
+        builder._limit = to - from + 1;
+        return builder;
+      },
+      gte: (col: string, val: any) => {
+        filters[`${col}__gte`] = val;
+        return builder;
+      },
+      lte: (col: string, val: any) => {
+        filters[`${col}__lte`] = val;
+        return builder;
+      },
+      in: (col: string, vals: any[]) => {
+        filters[`${col}__in`] = vals;
+        return builder;
+      },
       maybeSingle: async () => {
         isSingle = true;
         return builder.then((res: any) => ({ data: res.data?.[0] || null, error: res.error }));
