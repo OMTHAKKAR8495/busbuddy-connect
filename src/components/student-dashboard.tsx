@@ -29,6 +29,59 @@ type User = {
   profile: { full_name: string; roll_number: string | null; photo_url: string | null };
 };
 
+const DEFAULT_STUDENT_ROUTES = [
+  {
+    id: "route-1",
+    route_number: "R1",
+    name: "Soma Talav (BPC Pump) → GSFC University",
+    polyline: [[22.2879, 73.1927], [22.295, 73.185], [22.302, 73.178], [22.31, 73.17], [22.3236, 73.1631]],
+    stops: [
+      { id: "s1", name: "Soma Talav (BPC Pump)", lat: 22.2879, lng: 73.1927, stop_order: 1, scheduled_time: "07:30 AM" },
+      { id: "s2", name: "Gurukul Char Rasta", lat: 22.295, lng: 73.185, stop_order: 2, scheduled_time: "07:38 AM" },
+      { id: "s3", name: "Bapod Police St", lat: 22.302, lng: 73.178, stop_order: 3, scheduled_time: "07:46 AM" },
+      { id: "s4", name: "Super Bakery", lat: 22.31, lng: 73.17, stop_order: 4, scheduled_time: "07:54 AM" },
+      { id: "s5", name: "GSFC University", lat: 22.3236, lng: 73.1631, stop_order: 5, scheduled_time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-2",
+    route_number: "R2",
+    name: "Parivar Char Rasta → GSFC University",
+    polyline: [[22.308, 73.23], [22.315, 73.22], [22.325, 73.2], [22.34, 73.18], [22.3655, 73.1815]],
+    stops: [
+      { id: "s6", name: "Parivar Char Rasta", lat: 22.308, lng: 73.23, stop_order: 1, scheduled_time: "07:30 AM" },
+      { id: "s7", name: "Vrundavan Circle", lat: 22.315, lng: 73.22, stop_order: 2, scheduled_time: "07:38 AM" },
+      { id: "s8", name: "Sardar Estate (ISS)", lat: 22.325, lng: 73.2, stop_order: 3, scheduled_time: "07:46 AM" },
+      { id: "s9", name: "Amit Nagar", lat: 22.34, lng: 73.18, stop_order: 4, scheduled_time: "08:02 AM" },
+      { id: "s10", name: "GSFC University", lat: 22.3655, lng: 73.1815, stop_order: 5, scheduled_time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-3",
+    route_number: "R3",
+    name: "Khodiyar Nagar → GSFC University",
+    polyline: [[22.33, 73.225], [22.338, 73.21], [22.345, 73.2], [22.355, 73.19], [22.3655, 73.1815]],
+    stops: [
+      { id: "s11", name: "Khodiyar Nagar", lat: 22.33, lng: 73.225, stop_order: 1, scheduled_time: "07:30 AM" },
+      { id: "s12", name: "Airport Circle", lat: 22.338, lng: 73.21, stop_order: 2, scheduled_time: "07:38 AM" },
+      { id: "s13", name: "Harni Gada Circle", lat: 22.345, lng: 73.2, stop_order: 3, scheduled_time: "07:46 AM" },
+      { id: "s14", name: "Golden Chokadi", lat: 22.355, lng: 73.19, stop_order: 4, scheduled_time: "07:54 AM" },
+      { id: "s15", name: "GSFC University", lat: 22.3655, lng: 73.1815, stop_order: 5, scheduled_time: "08:15 AM" },
+    ],
+  },
+  {
+    id: "route-4",
+    route_number: "R4",
+    name: "Chankypuri → GSFC University",
+    polyline: [[22.345, 73.175], [22.352, 73.18], [22.358, 73.182], [22.3655, 73.1815]],
+    stops: [
+      { id: "s16", name: "Chankypuri", lat: 22.345, lng: 73.175, stop_order: 1, scheduled_time: "07:40 AM" },
+      { id: "s17", name: "Abhilasha Char Rasta", lat: 22.352, lng: 73.18, stop_order: 2, scheduled_time: "07:48 AM" },
+      { id: "s18", name: "GSFC University", lat: 22.3655, lng: 73.1815, stop_order: 3, scheduled_time: "08:15 AM" },
+    ],
+  },
+];
+
 export default function StudentDashboard({
   user,
   onOverrideRole,
@@ -74,17 +127,24 @@ export default function StudentDashboard({
 }
 
 function TrackPanel({ user }: { user: User }) {
-  const { data: routes = [] } = useQuery({
+  const { data: routesData = [] } = useQuery({
     queryKey: ["routes-with-stops"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("routes")
-        .select("id, route_number, name, polyline, stops(id,name,lat,lng,stop_order,scheduled_time)")
-        .eq("active", true)
-        .order("route_number");
-      return data ?? [];
+      try {
+        const { data } = await supabase
+          .from("routes")
+          .select("id, route_number, name, polyline, stops(id,name,lat,lng,stop_order,scheduled_time)")
+          .eq("active", true)
+          .order("route_number");
+        if (data && data.length > 0) return data;
+      } catch (err) {
+        console.warn("Error fetching routes from db:", err);
+      }
+      return DEFAULT_STUDENT_ROUTES;
     },
   });
+
+  const routes = routesData.length > 0 ? routesData : DEFAULT_STUDENT_ROUTES;
 
   const { data: buses = [] } = useQuery({
     queryKey: ["buses"],

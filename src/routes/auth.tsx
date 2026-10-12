@@ -178,44 +178,64 @@ function AuthPage() {
         }
       } else {
         // Sign In Flow
+        let neonUser = null;
         try {
-          const neonUser = await loginUserWithNeon(email, password);
-          if (neonUser) {
-            localStorage.removeItem("gsfcu_demo_role");
-            localStorage.setItem(
-              "gsfcu_active_user",
-              JSON.stringify({
-                userId: neonUser.id,
-                role: neonUser.role,
-                profile: {
-                  full_name: neonUser.full_name,
-                  roll_number: neonUser.roll_number || null,
-                  photo_url: null,
-                },
-              })
-            );
-            toast.success(`Welcome back ${neonUser.full_name}!`);
-            navigate({ to: "/app" });
-            return;
-          }
+          neonUser = await loginUserWithNeon(email, password);
         } catch (neonLoginErr) {
           console.warn("Neon login check error:", neonLoginErr);
         }
 
+        if (neonUser) {
+          localStorage.removeItem("gsfcu_demo_role");
+          localStorage.setItem(
+            "gsfcu_active_user",
+            JSON.stringify({
+              userId: neonUser.id,
+              role: neonUser.role,
+              profile: {
+                full_name: neonUser.full_name,
+                roll_number: neonUser.roll_number || null,
+                photo_url: null,
+              },
+            })
+          );
+          toast.success(`Welcome back ${neonUser.full_name}!`);
+          navigate({ to: "/app" });
+          return;
+        }
+
         // Supabase sign in fallback
         try {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (!error) {
+          const { data: supaData, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (!error && supaData?.user) {
             toast.success("Welcome back to GSFCU Transit");
             navigate({ to: "/app" });
             return;
           }
         } catch (supaErr) {}
 
-        // Fallback demo login if matching credentials or prompt
-        localStorage.setItem("gsfcu_demo_role", "student");
-        toast.success("Signed in successfully to GSFCU Transit Console");
-        navigate({ to: "/app" });
+        // Check if student exists in registered_students_master or local registrations
+        const rollMatched = email.split("@")[0].toUpperCase();
+        const storedUsers = localStorage.getItem("gsfcu_registered_accounts");
+        let locallyMatched = null;
+        if (storedUsers) {
+          try {
+            const list = JSON.parse(storedUsers);
+            locallyMatched = list.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
+          } catch (e) {}
+        }
+
+        if (locallyMatched) {
+          localStorage.removeItem("gsfcu_demo_role");
+          localStorage.setItem("gsfcu_active_user", JSON.stringify(locallyMatched));
+          toast.success(`Welcome back ${locallyMatched.profile.full_name}!`);
+          navigate({ to: "/app" });
+          return;
+        }
+
+        // If credentials did not match any registered account
+        toast.error("Account not found or password incorrect. Please register first or click Student Demo below.");
+        return;
       }
     } catch (e: unknown) {
       toast.error((e as Error).message || "Authentication error");

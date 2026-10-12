@@ -208,11 +208,16 @@ export const supabase = {
               WHERE r.active = true
               ORDER BY r.route_number ASC;
             `;
-            const stops = await neonSql`
-              SELECT id, route_id, name, stop_order
-              FROM public.stops
-              ORDER BY route_id, stop_order ASC;
-            `;
+            let stops: any[] = [];
+            try {
+              stops = await neonSql`
+                SELECT id, route_id, name, lat, lng, stop_order, scheduled_time
+                FROM public.stops
+                ORDER BY route_id, stop_order ASC;
+              `;
+            } catch (err) {
+              console.warn("Could not fetch stops:", err);
+            }
             const stopsMap = stops.reduce((acc: any, s: any) => {
               acc[s.route_id] = acc[s.route_id] || [];
               acc[s.route_id].push(s);

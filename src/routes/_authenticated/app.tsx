@@ -18,29 +18,29 @@ function AppRouter() {
 
   // ⛔ SECURITY: Override role is restricted — "admin" override is completely blocked.
   // Initialize override role from demo selection if present
-  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "scanner" | null>(() => {
+  const [overrideRole, setOverrideRole] = useState<"student" | "driver" | "scanner" | null>(null);
+  const [activeDriverPass, setActiveDriverPass] = useState<any>(null);
+  const [activeRegisteredUser, setActiveRegisteredUser] = useState<any>(null);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("gsfcu_demo_role");
-        if (saved === "driver" || saved === "scanner" || saved === "student") {
-          return saved;
+        const stored = localStorage.getItem("gsfcu_demo_role");
+        if (stored === "driver" || stored === "scanner" || stored === "student") {
+          setOverrideRole(stored as any);
+        }
+        const storedDriver = localStorage.getItem("gsfcu_active_driver_profile");
+        if (storedDriver) setActiveDriverPass(JSON.parse(storedDriver));
+        const storedUser = localStorage.getItem("gsfcu_active_user");
+        if (storedUser) {
+          setActiveRegisteredUser(JSON.parse(storedUser));
+          // Once a registered user is detected, remove any stale demo override
+          localStorage.removeItem("gsfcu_demo_role");
+          setOverrideRole(null);
         }
       } catch (e) {}
     }
-    return null;
-  });
-
-  // Read active driver profile or newly registered user profile
-  let activeDriverPass: any = null;
-  let activeRegisteredUser: any = null;
-  if (typeof window !== "undefined") {
-    try {
-      const storedDriver = localStorage.getItem("gsfcu_active_driver_profile");
-      if (storedDriver) activeDriverPass = JSON.parse(storedDriver);
-      const storedUser = localStorage.getItem("gsfcu_active_user");
-      if (storedUser) activeRegisteredUser = JSON.parse(storedUser);
-    } catch (e) {}
-  }
+  }, []);
 
   // If a real account is signed in, do not treat as demo
   const effectiveOverrideRole = activeRegisteredUser ? null : overrideRole;
@@ -53,10 +53,10 @@ function AppRouter() {
     profile: {
       full_name: effectiveOverrideRole === "driver" 
         ? (activeDriverPass?.driver_name || "Ramesh Patel") 
-        : (activeRegisteredUser?.profile?.full_name || "Om Thakkar"),
+        : (activeRegisteredUser?.profile?.full_name || "Student"),
       roll_number: effectiveOverrideRole === "driver" 
         ? (activeDriverPass?.employee_id || "DRV-101") 
-        : (activeRegisteredUser?.profile?.roll_number || "24BT04171"),
+        : (activeRegisteredUser?.profile?.roll_number || ""),
       photo_url: effectiveOverrideRole === "driver" ? (activeDriverPass?.photo_url || null) : null,
     },
   };

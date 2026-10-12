@@ -188,7 +188,7 @@ export default function AppShell({
                 </span>
               </div>
               <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                <ShieldCheck className="h-3 w-3 text-primary" /> {overrideRole ? `Demo ${overrideRole}` : role} Console
+                <ShieldCheck className="h-3 w-3 text-primary" /> {overrideRole && !role.includes("·") ? `Demo ${overrideRole} Console` : role.endsWith("Console") ? role : `${role} Console`}
               </div>
             </div>
           </a>
