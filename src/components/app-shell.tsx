@@ -470,11 +470,12 @@ export default function AppShell({
         </div>
       )}
 
-      {/* Floating Left Sidebar Action Options */}
-      <aside
-        aria-label="Quick Actions Sidebar"
-        className="fixed left-3 sm:left-5 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-2.5 p-2 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-left-4 duration-300"
-      >
+      {/* Floating Left Sidebar Action Options (Hidden in Admin HQ to prevent duplicate UI) */}
+      {!isAdmin && (
+        <aside
+          aria-label="Quick Actions Sidebar"
+          className="fixed left-3 sm:left-5 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-2.5 p-2 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-left-4 duration-300"
+        >
         <button
           onClick={toggleTheme}
           className="flex items-center gap-2 rounded-xl border border-border/80 bg-background/80 px-3.5 py-2 text-xs font-bold text-foreground shadow-sm transition hover:bg-muted active:scale-95"
@@ -502,6 +503,7 @@ export default function AppShell({
           <span>Get Mobile App</span>
         </button>
       </aside>
+      )}
 
       {/* App Store & Play Store Download Modal */}
       {showInstallModal && (
