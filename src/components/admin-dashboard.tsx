@@ -62,26 +62,6 @@ export default function AdminDashboard({
 }) {
   const [tab, setTab] = useState<"fleet" | "passes" | "driver-id-passes" | "routes" | "analytics" | "attendance" | "driver-shifts">("fleet");
 
-  const [showInstallModal, setShowInstallModal] = useState(false);
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return document.documentElement.classList.contains("dark") || localStorage.getItem("theme") !== "light";
-    }
-    return true;
-  });
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  };
-
   return (
     <AppShell
       title="Transport Admin HQ"
@@ -153,40 +133,8 @@ export default function AdminDashboard({
                 );
               })}
             </nav>
-
-            {/* Quick Action Options directly in Left Sidebar */}
-            <div className="pt-2 border-t border-border/60 flex flex-col gap-2">
-              <button
-                onClick={toggleTheme}
-                className="flex w-full items-center justify-between rounded-xl border border-border/80 bg-background/70 px-3.5 py-2.5 text-xs font-bold text-foreground shadow-sm transition hover:bg-muted active:scale-[0.98]"
-                title="Toggle Light / Dark Mode"
-              >
-                <div className="flex items-center gap-2.5">
-                  {isDark ? (
-                    <Sun className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
-                  ) : (
-                    <Moon className="h-4 w-4 text-indigo-500 fill-indigo-500 shrink-0" />
-                  )}
-                  <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
-                </div>
-                <span className="text-[10px] text-muted-foreground font-mono">Theme</span>
-              </button>
-
-              <button
-                onClick={() => setShowInstallModal(true)}
-                className="flex w-full items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 shadow-sm transition hover:bg-emerald-500/20 active:scale-[0.98]"
-                title="Download GSFCU Mobile App"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Smartphone className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Get Mobile App</span>
-                </div>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">Install</span>
-              </button>
-            </div>
-
             {/* Quick System Info in Sidebar Footer */}
-            <div className="hidden lg:block pt-2 border-t border-border/60 px-2 text-[11px] text-muted-foreground space-y-1 font-mono">
+            <div className="hidden lg:block pt-3 border-t border-border/60 px-2 text-[11px] text-muted-foreground space-y-1 font-mono">
               <div className="flex items-center justify-between text-[10px]">
                 <span>System Status</span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">Online 100%</span>
@@ -210,79 +158,6 @@ export default function AdminDashboard({
           {tab === "analytics" && <AnalyticsTab />}
         </section>
       </div>
-
-      {/* App Store & Play Store Download Modal */}
-      {showInstallModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-6 my-auto animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-start justify-between border-b border-border/60 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
-                  <Smartphone className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-display text-xl font-extrabold">Download GSFCU Mobile App</h3>
-                  <p className="text-xs text-muted-foreground">Official App Store & Google Play Store Links</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="rounded-full bg-muted p-1.5 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <a
-                  href="https://apps.apple.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-3.5 text-white shadow-md hover:bg-slate-800 transition group"
-                >
-                  <Apple className="h-7 w-7 shrink-0 text-white group-hover:scale-110 transition" />
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Download on the</div>
-                    <div className="text-sm font-extrabold leading-tight">Apple App Store</div>
-                  </div>
-                </a>
-
-                <a
-                  href="https://play.google.com/store"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-3 rounded-2xl border border-emerald-600/40 bg-slate-900 p-3.5 text-white shadow-md hover:bg-slate-800 transition group"
-                >
-                  <Play className="h-7 w-7 shrink-0 text-emerald-400 fill-emerald-400 group-hover:scale-110 transition" />
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">GET IT ON</div>
-                    <div className="text-sm font-extrabold leading-tight">Google Play Store</div>
-                  </div>
-                </a>
-              </div>
-
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2 text-xs">
-                <div className="font-bold text-foreground flex items-center gap-1.5">
-                  <Zap className="h-4 w-4 text-amber-500" /> Instant Mobile App (No App Store Login Needed)
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Open <strong>https://busbuddy-connect.vercel.app</strong> on your phone and tap <strong>Add to Home Screen</strong> to install the full mobile app instantly!
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 text-right">
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-md min-h-[40px]"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AppShell>
   );
 }

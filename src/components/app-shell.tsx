@@ -239,51 +239,9 @@ export default function AppShell({
           </a>
 
           <div className="flex items-center gap-2">
-            {/* Light / Dark Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-muted active:scale-95 min-h-[36px]"
-              title="Toggle Light / Dark Mode Theme"
-            >
-              {isDark ? (
-                <>
-                  <Sun className="h-4 w-4 text-amber-400 fill-amber-400" />
-                  <span className="hidden sm:inline text-xs font-semibold">Light Mode</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="h-4 w-4 text-indigo-500 fill-indigo-500" />
-                  <span className="hidden sm:inline text-xs font-semibold">Dark Mode</span>
-                </>
-              )}
-            </button>
-            {(isDriver || isAdmin) && (
-              <button
-                onClick={() => {
-                  if (onOverrideRole) {
-                    onOverrideRole(activeRoleLower.includes("scanner") ? null : "scanner");
-                  } else {
-                    window.location.href = "/scanner";
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition"
-              >
-                <QrCode className="h-3.5 w-3.5" /> QR Scanner
-              </button>
-            )}
-
-            {/* Admin Login Button — visible in header for admin access */}
-            <button
-              onClick={() => { window.location.href = "/admin"; }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition"
-              title="Transport Admin Login"
-            >
-              <Lock className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Admin Login</span><span className="sm:hidden">Admin</span>
-            </button>
-
             <button
               onClick={signOut}
-              className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/50 hover:text-destructive hover:bg-destructive/5 active:scale-95 min-h-[36px]"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/50 hover:text-destructive hover:bg-destructive/5 active:scale-95 min-h-[36px]"
             >
               <LogOut className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Sign Out</span>
             </button>
@@ -512,10 +470,10 @@ export default function AppShell({
         </div>
       )}
 
-      {/* Floating Right Sidebar Action Options */}
+      {/* Floating Left Sidebar Action Options */}
       <aside
         aria-label="Quick Actions Sidebar"
-        className="fixed right-3 sm:right-5 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-2.5 p-2 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300"
+        className="fixed left-3 sm:left-5 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-2.5 p-2 rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-left-4 duration-300"
       >
         <button
           onClick={toggleTheme}
