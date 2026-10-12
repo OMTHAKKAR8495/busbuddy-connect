@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import { sql } from "../db.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_super_secret_key_gsfcu_transit";
 
@@ -9,15 +9,27 @@ export const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, JWT_SECRET);
-      req.user = await User.findById(decoded.id).select("-password");
-      next();
+      
+      const rows = await sql`
+        SELECT id, full_name, email, role, roll_number, phone, created_at
+        FROM public.app_accounts
+        WHERE id = ${decoded.id}
+        LIMIT 1;
+      `;
+
+      if (rows.length === 0) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      req.user = rows[0];
+      return next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: "Not authorized, token failed" });
+      console.error("[Auth Middleware Error]", error.message);
+      return res.status(401).json({ message: "Not authorized, token failed" });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: "Not authorized, no token" });
+    return res.status(401).json({ message: "Not authorized, no token" });
   }
 };
