@@ -30,26 +30,35 @@ function AppRouter() {
     return null;
   });
 
-  // Read active driver profile if set via Driver ID Pass Login or Admin launch
+  // Read active driver profile or newly registered user profile
   let activeDriverPass: any = null;
+  let activeRegisteredUser: any = null;
   if (typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem("gsfcu_active_driver_profile");
-      if (stored) activeDriverPass = JSON.parse(stored);
+      const storedDriver = localStorage.getItem("gsfcu_active_driver_profile");
+      if (storedDriver) activeDriverPass = JSON.parse(storedDriver);
+      const storedUser = localStorage.getItem("gsfcu_active_user");
+      if (storedUser) activeRegisteredUser = JSON.parse(storedUser);
     } catch (e) {}
   }
 
   const fallbackUser = {
-    userId: overrideRole === "driver" ? (activeDriverPass?.id || "eval-driver-ramesh") : "eval-om-thakkar",
-    role: (overrideRole === "driver" ? "driver" : "student") as const,
+    userId: overrideRole === "driver" 
+      ? (activeDriverPass?.id || "eval-driver-ramesh") 
+      : (activeRegisteredUser?.userId || "eval-om-thakkar"),
+    role: (overrideRole === "driver" ? "driver" : (overrideRole || activeRegisteredUser?.role || "student")) as const,
     profile: {
-      full_name: overrideRole === "driver" ? (activeDriverPass?.driver_name || "Ramesh Patel") : "Om Thakkar",
-      roll_number: overrideRole === "driver" ? (activeDriverPass?.employee_id || "DRV-101") : "24BT04171",
+      full_name: overrideRole === "driver" 
+        ? (activeDriverPass?.driver_name || "Ramesh Patel") 
+        : (activeRegisteredUser?.profile?.full_name || "Om Thakkar"),
+      roll_number: overrideRole === "driver" 
+        ? (activeDriverPass?.employee_id || "DRV-101") 
+        : (activeRegisteredUser?.profile?.roll_number || "24BT04171"),
       photo_url: overrideRole === "driver" ? (activeDriverPass?.photo_url || null) : null,
     },
   };
 
-  const userObj = (overrideRole === "driver" && activeDriverPass) ? fallbackUser : (data || fallbackUser);
+  const userObj = activeRegisteredUser || (overrideRole === "driver" && activeDriverPass ? fallbackUser : (data || fallbackUser));
   const u = userObj as { userId: string; profile: { full_name: string; roll_number: string | null; photo_url: string | null } };
 
   // ⛔ SECURITY GATE: Intercept any attempt to set admin role via override
