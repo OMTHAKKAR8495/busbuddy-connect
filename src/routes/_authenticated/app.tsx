@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMyRole } from "@/hooks/use-role";
 import StudentDashboard from "@/components/student-dashboard";
 import DriverDashboard from "@/components/driver-dashboard";
@@ -49,7 +49,7 @@ function AppRouter() {
     userId: effectiveOverrideRole === "driver" 
       ? (activeDriverPass?.id || "eval-driver-ramesh") 
       : (activeRegisteredUser?.userId || "eval-om-thakkar"),
-    role: (effectiveOverrideRole === "driver" ? "driver" : (effectiveOverrideRole || activeRegisteredUser?.role || "student")) as const,
+    role: (effectiveOverrideRole === "driver" ? "driver" : (effectiveOverrideRole || activeRegisteredUser?.role || "student")) as "student" | "driver" | "admin" | "scanner",
     profile: {
       full_name: effectiveOverrideRole === "driver" 
         ? (activeDriverPass?.driver_name || "Ramesh Patel") 
