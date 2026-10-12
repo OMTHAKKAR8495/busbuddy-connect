@@ -23,7 +23,7 @@ GSFCU Transit is a custom-engineered, real-time campus shuttle tracking and digi
 
 - **Framework**: [TanStack Start](https://tanstack.com/start) + React 19 + TypeScript
 - **Styling**: Tailwind CSS v4 + Lucide Icons + Custom Glassmorphism UI
-- **Database & Auth**: Supabase Realtime + Cloud Storage + Row Level Security
+- **Database & Backend**: [Neon PostgreSQL](https://neon.tech) Serverless + Node.js Express backend
 - **Mapping**: Leaflet + React Leaflet
 
 ---
@@ -43,21 +43,22 @@ git clone https://github.com/OMTHAKKAR8495/busbuddy-connect.git
 cd busbuddy-connect
 
 # Install dependencies
-bun install
+npm install
 
 # Start local development server
-bun dev
+npm run dev
 ```
 
 ---
 
 ## 🔒 Environment Variables
 
-Copy `.env.example` to `.env` and fill in your Supabase credentials:
+Configure your Neon PostgreSQL credentials in `.env.local`:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+DATABASE_URL=postgresql://user:password@ep-billowing-pine-b5mr2ja6-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
+VITE_NEON_DATABASE_URL=postgresql://user:password@ep-billowing-pine-b5mr2ja6-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
+PORT=3001
 ```
 
 ---
