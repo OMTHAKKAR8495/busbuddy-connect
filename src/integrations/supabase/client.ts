@@ -94,11 +94,35 @@ export const supabase = {
       return { data: null, error: new Error("OAuth configured via Neon Auth Provider") };
     },
 
+    onAuthStateChange: (callback: (event: string, session: any) => void) => {
+      // In Neon PostgreSQL architecture, broadcast state changes or listen to storage
+      const listener = (e: StorageEvent) => {
+        if (e.key === "gsfcu_active_user") {
+          callback(e.newValue ? "SIGNED_IN" : "SIGNED_OUT", null);
+        }
+      };
+      if (typeof window !== "undefined") {
+        window.addEventListener("storage", listener);
+      }
+      return {
+        data: {
+          subscription: {
+            unsubscribe: () => {
+              if (typeof window !== "undefined") {
+                window.removeEventListener("storage", listener);
+              }
+            },
+          },
+        },
+      };
+    },
+
     signOut: async () => {
       if (typeof window !== "undefined") {
         localStorage.removeItem("gsfcu_active_user");
         localStorage.removeItem("gsfcu_demo_role");
         localStorage.removeItem("gsfcu_auth_token");
+        window.dispatchEvent(new Event("gsfcu_auth_change"));
       }
       return { error: null };
     },
