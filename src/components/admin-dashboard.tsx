@@ -22,6 +22,7 @@ import {
   QrCode,
   Eye,
   Ban,
+  Sparkles,
   CheckCircle2,
   IdCard,
   KeyRound,
