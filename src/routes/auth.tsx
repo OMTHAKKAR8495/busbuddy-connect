@@ -140,8 +140,8 @@ function AuthPage() {
             role: assignedRole,
           });
 
-          // Save active session
-          localStorage.setItem("gsfcu_demo_role", assignedRole);
+          // Clear any leftover demo override so the real registered account is active
+          localStorage.removeItem("gsfcu_demo_role");
           localStorage.setItem(
             "gsfcu_active_user",
             JSON.stringify({
@@ -170,7 +170,7 @@ function AuthPage() {
               photo_url: null,
             },
           };
-          localStorage.setItem("gsfcu_demo_role", assignedRole);
+          localStorage.removeItem("gsfcu_demo_role");
           localStorage.setItem("gsfcu_active_user", JSON.stringify(localUser));
           toast.success(`🎉 Welcome ${fullName.trim()}! Account created successfully.`);
           navigate({ to: "/app" });
@@ -181,7 +181,7 @@ function AuthPage() {
         try {
           const neonUser = await loginUserWithNeon(email, password);
           if (neonUser) {
-            localStorage.setItem("gsfcu_demo_role", neonUser.role);
+            localStorage.removeItem("gsfcu_demo_role");
             localStorage.setItem(
               "gsfcu_active_user",
               JSON.stringify({

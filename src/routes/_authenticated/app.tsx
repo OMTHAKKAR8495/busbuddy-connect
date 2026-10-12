@@ -42,23 +42,26 @@ function AppRouter() {
     } catch (e) {}
   }
 
+  // If a real account is signed in, do not treat as demo
+  const effectiveOverrideRole = activeRegisteredUser ? null : overrideRole;
+
   const fallbackUser = {
-    userId: overrideRole === "driver" 
+    userId: effectiveOverrideRole === "driver" 
       ? (activeDriverPass?.id || "eval-driver-ramesh") 
       : (activeRegisteredUser?.userId || "eval-om-thakkar"),
-    role: (overrideRole === "driver" ? "driver" : (overrideRole || activeRegisteredUser?.role || "student")) as const,
+    role: (effectiveOverrideRole === "driver" ? "driver" : (effectiveOverrideRole || activeRegisteredUser?.role || "student")) as const,
     profile: {
-      full_name: overrideRole === "driver" 
+      full_name: effectiveOverrideRole === "driver" 
         ? (activeDriverPass?.driver_name || "Ramesh Patel") 
         : (activeRegisteredUser?.profile?.full_name || "Om Thakkar"),
-      roll_number: overrideRole === "driver" 
+      roll_number: effectiveOverrideRole === "driver" 
         ? (activeDriverPass?.employee_id || "DRV-101") 
         : (activeRegisteredUser?.profile?.roll_number || "24BT04171"),
-      photo_url: overrideRole === "driver" ? (activeDriverPass?.photo_url || null) : null,
+      photo_url: effectiveOverrideRole === "driver" ? (activeDriverPass?.photo_url || null) : null,
     },
   };
 
-  const userObj = activeRegisteredUser || (overrideRole === "driver" && activeDriverPass ? fallbackUser : (data || fallbackUser));
+  const userObj = activeRegisteredUser || (effectiveOverrideRole === "driver" && activeDriverPass ? fallbackUser : (data || fallbackUser));
   const u = userObj as { userId: string; profile: { full_name: string; roll_number: string | null; photo_url: string | null } };
 
   // ⛔ SECURITY GATE: Intercept any attempt to set admin role via override
@@ -80,13 +83,13 @@ function AppRouter() {
 
   // Determine effective role — admin override is always blocked here
   const dbRole = userObj.role?.toLowerCase() ?? "student";
-  const activeRole = overrideRole ?? (dbRole === "admin" ? "student" : dbRole); // DB admins viewing /app see student view
+  const activeRole = effectiveOverrideRole ?? (dbRole === "admin" ? "student" : dbRole); // DB admins viewing /app see student view
 
   if (activeRole === "scanner")
     return (
       <ConductorScannerPage
         onOverrideRole={handleSetOverrideRole}
-        overrideRole={overrideRole}
+        overrideRole={effectiveOverrideRole}
       />
     );
 
@@ -95,7 +98,7 @@ function AppRouter() {
       <DriverDashboard
         user={{ ...u, role: "driver" }}
         onOverrideRole={handleSetOverrideRole}
-        overrideRole={overrideRole}
+        overrideRole={effectiveOverrideRole}
       />
     );
 
@@ -104,7 +107,7 @@ function AppRouter() {
     <StudentDashboard
       user={{ ...u, role: "student" }}
       onOverrideRole={handleSetOverrideRole}
-      overrideRole={overrideRole}
+      overrideRole={effectiveOverrideRole}
     />
   );
 }
