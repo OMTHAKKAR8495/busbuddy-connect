@@ -73,11 +73,36 @@ export default function DriverDashboard({
       ).data,
   });
 
+  // Check if a specific driver profile is active from Driver Pass Login or Admin Launch
+  const activeProfile = (() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("gsfcu_active_driver_profile");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return null;
+  })();
+
   const loggedInDriverLabel = user.profile.full_name
     ? `${user.profile.full_name} (Logged-in Account)`
-    : "Om Thakkar (Logged-in Account)";
+    : activeProfile?.driver_name
+      ? `${activeProfile.driver_name} (Logged-in Pass)`
+      : "Om Thakkar (Logged-in Account)";
 
-  const [selectedBus, setSelectedBus] = useState<string>("bus-01");
+  // Determine initial bus selection based on active profile
+  const initialBusId = (() => {
+    if (activeProfile?.assigned_bus) {
+      const busNum = activeProfile.assigned_bus.split(" ")[0].toLowerCase();
+      if (busNum.includes("bus-04")) return "bus-04";
+      if (busNum.includes("bus-03")) return "bus-03";
+      if (busNum.includes("bus-02")) return "bus-02";
+      if (busNum.includes("bus-01")) return "bus-01";
+    }
+    return "bus-01";
+  })();
+
+  const [selectedBus, setSelectedBus] = useState<string>(initialBusId);
   const [selectedDriver, setSelectedDriver] = useState<string>(loggedInDriverLabel);
   const [customDriverName, setCustomDriverName] = useState<string>("");
   const [isCustomDriver, setIsCustomDriver] = useState<boolean>(false);

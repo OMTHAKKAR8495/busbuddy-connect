@@ -167,51 +167,6 @@ export default function AppShell({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col antialiased">
-      {/* Top Faculty Presentation Control Bar */}
-      <div className="border-b border-primary/20 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/10 px-4 py-2 text-xs font-semibold">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Award className="h-4 w-4 text-primary animate-bounce shrink-0" />
-            <span className="font-bold text-foreground">GSFCU Practical Evaluation:</span>
-            <span className="text-muted-foreground hidden sm:inline">
-              Author: Om Thakkar (Roll 24BT04171)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1.5">
-              <span className="text-muted-foreground text-[11px] font-mono mr-0.5">Role:</span>
-              {allowedTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    if (tab.id === "admin") {
-                      window.location.href = "/admin";
-                    } else {
-                      onOverrideRole?.(overrideRole === tab.id ? null : (tab.id as never));
-                    }
-                  }}
-                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                    activeRoleLower.includes(tab.id)
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-card border border-border/80 text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.emoji} {tab.label}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setShowSpecModal(true)}
-                className="ml-1 inline-flex items-center gap-1 rounded-lg bg-card border border-primary/40 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/5 transition"
-              >
-                <FileText className="h-3.5 w-3.5" /> Specs
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">

@@ -2211,6 +2211,8 @@ export type DriverPassRecord = {
   id: string;
   driver_name: string;
   employee_id: string;
+  login_email?: string;
+  login_password?: string;
   license_number: string;
   phone_number: string;
   blood_group: string;
@@ -2231,6 +2233,8 @@ const DEFAULT_DRIVERS_PASSES: DriverPassRecord[] = [
     id: "drv-pass-101",
     driver_name: "Suresh Kumar",
     employee_id: "GSFC-DRV-101",
+    login_email: "suresh@driver.gsfcu.ac.in",
+    login_password: "Driver@101",
     license_number: "GJ06-2018-DL9871",
     phone_number: "+91 98250 11442",
     blood_group: "B+",
@@ -2248,6 +2252,8 @@ const DEFAULT_DRIVERS_PASSES: DriverPassRecord[] = [
     id: "drv-pass-102",
     driver_name: "Ramesh Patel",
     employee_id: "GSFC-DRV-102",
+    login_email: "ramesh@driver.gsfcu.ac.in",
+    login_password: "Driver@102",
     license_number: "GJ06-2016-DL3312",
     phone_number: "+91 97241 88910",
     blood_group: "O+",
@@ -2265,6 +2271,8 @@ const DEFAULT_DRIVERS_PASSES: DriverPassRecord[] = [
     id: "drv-pass-103",
     driver_name: "Mahesh Singh",
     employee_id: "GSFC-DRV-103",
+    login_email: "mahesh@driver.gsfcu.ac.in",
+    login_password: "Driver@103",
     license_number: "GJ06-2019-DL7784",
     phone_number: "+91 98980 44321",
     blood_group: "A+",
@@ -2413,11 +2421,17 @@ function DriverIdPassesTab() {
       setShowGenerateModal(false);
       setEditingPass(null);
     } else {
-      // Generate Brand New Driver Pass
+      // Generate Brand New Driver Pass with Login Credentials
+      const cleanEmpId = (employeeId.trim() || `GSFC-DRV-${Math.floor(100 + Math.random() * 900)}`).toUpperCase();
+      const generatedEmail = `${cleanEmpId.toLowerCase().replace(/[^a-z0-9]/g, "")}@driver.gsfcu.ac.in`;
+      const generatedPassword = `Driver@${cleanEmpId.replace(/[^0-9]/g, "") || Math.floor(1000 + Math.random() * 9000)}`;
+
       const newPass: DriverPassRecord = {
         id: "drv-pass-" + Date.now(),
         driver_name: driverName.trim(),
-        employee_id: employeeId.trim() || `GSFC-DRV-${Math.floor(100 + Math.random() * 900)}`,
+        employee_id: cleanEmpId,
+        login_email: generatedEmail,
+        login_password: generatedPassword,
         license_number: licenseNumber.trim() || `GJ06-${new Date().getFullYear()}-DL${Math.floor(1000 + Math.random() * 9000)}`,
         phone_number: phoneNumber.trim() || "+91 98765 00000",
         blood_group: bloodGroup,
@@ -2435,9 +2449,9 @@ function DriverIdPassesTab() {
 
       const updatedList = [newPass, ...driverPasses];
       savePasses(updatedList);
-      toast.success(`🎉 Official Driver ID Pass generated for ${driverName.trim()}!`);
+      toast.success(`🎉 Official Driver ID Pass generated with Driver Mode access for ${driverName.trim()}!`);
       setShowGenerateModal(false);
-      setViewingPass(newPass); // Immediately view new pass
+      setViewingPass(newPass); // Immediately view new pass with login credentials
     }
   };
 
@@ -2518,8 +2532,16 @@ function DriverIdPassesTab() {
                   <div class="val">${pass.blood_group}</div>
                 </div>
                 <div>
-                  <div class="label">Validity Period</div>
+                  <div class="label">Pass Validity</div>
                   <div class="val">${pass.valid_from} → ${pass.valid_until}</div>
+                </div>
+                <div>
+                  <div class="label">Driver Login ID</div>
+                  <div class="val" style="color:#38bdf8; font-family:monospace;">${pass.employee_id}</div>
+                </div>
+                <div>
+                  <div class="label">Portal Access Password</div>
+                  <div class="val" style="color:#34d399; font-family:monospace;">${pass.login_password || `Driver@${pass.employee_id.replace(/[^0-9]/g, "") || "123"}`}</div>
                 </div>
                 <div>
                   <div class="label">Emergency Call</div>
@@ -2863,6 +2885,17 @@ function DriverIdPassesTab() {
                 </div>
               </div>
 
+              {/* Driver Portal Login Credentials Info Notice */}
+              <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 text-xs space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-primary">
+                  <Sparkles className="h-4 w-4 shrink-0" />
+                  <span>Driver Mode Login Credentials (Auto-Generated)</span>
+                </div>
+                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                  Generating this pass enables the driver to log in directly via the Driver Portal or Console using their Employee ID (<strong className="text-foreground">{employeeId || "GSFC-DRV-..."}</strong>) and default PIN password (<strong className="text-foreground">{`Driver@${(employeeId || "101").replace(/[^0-9]/g, "") || "123"}`}</strong>).
+                </p>
+              </div>
+
               {/* Assigned Bus & Route Assignment */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -3051,10 +3084,43 @@ function DriverIdPassesTab() {
                 </div>
               </div>
 
+              {/* Driver Portal Login Credentials box */}
+              <div className="rounded-2xl border border-emerald-400/30 bg-black/40 backdrop-blur-sm p-3 space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                  <span>🔑 Driver Portal Access</span>
+                  <span className="text-emerald-300">Ready to Login</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div className="rounded-lg bg-white/5 p-1.5">
+                    <span className="text-[9px] text-slate-400 block">Login ID / Emp ID</span>
+                    <strong className="text-sky-300">{viewingPass.employee_id}</strong>
+                  </div>
+                  <div className="rounded-lg bg-white/5 p-1.5">
+                    <span className="text-[9px] text-slate-400 block">Password</span>
+                    <strong className="text-emerald-300">{viewingPass.login_password || `Driver@${viewingPass.employee_id.replace(/[^0-9]/g, "") || "123"}`}</strong>
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-xl bg-white/10 p-2 text-center text-[10px] font-mono font-bold tracking-widest text-emerald-400">
                 AUTHENTICATED & ACTIVE SHIFT PASS
               </div>
             </div>
+
+            {/* Direct Login as Driver Button */}
+            <button
+              onClick={() => {
+                try {
+                  localStorage.setItem("gsfcu_demo_role", "driver");
+                  localStorage.setItem("gsfcu_active_driver_profile", JSON.stringify(viewingPass));
+                } catch (e) {}
+                toast.success(`Logging in as ${viewingPass.driver_name} into Driver Dashboard...`);
+                window.location.href = "/app";
+              }}
+              className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 text-xs font-extrabold text-white shadow-lg shadow-emerald-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <span>🚀 Access Driver Mode & Dashboard Now</span>
+            </button>
 
             {/* Quick Actions inside preview */}
             <div className="flex gap-2 pt-1">

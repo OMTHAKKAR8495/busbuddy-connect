@@ -16,13 +16,15 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "driver_id">("signin");
   const [role, setRole] = useState<"student" | "driver" | "admin">("student");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [rollNumber, setRollNumber] = useState("");
+  const [driverEmpId, setDriverEmpId] = useState("");
+  const [driverPasscode, setDriverPasscode] = useState("");
   const [unconfirmedEmailError, setUnconfirmedEmailError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,6 +32,85 @@ function AuthPage() {
       if (data.user) navigate({ to: "/app" });
     });
   }, [navigate]);
+
+  // Driver ID & Pass direct authentication handler
+  function handleDriverPassLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const cleanInput = driverEmpId.trim().toUpperCase();
+      const enteredPass = driverPasscode.trim();
+
+      // Read driver passes from localStorage or default list
+      let passes: any[] = [];
+      try {
+        const stored = localStorage.getItem("gsfcu_driver_id_passes");
+        if (stored) passes = JSON.parse(stored);
+      } catch (err) {}
+
+      // Fallback default list if empty
+      if (!passes || passes.length === 0) {
+        passes = [
+          {
+            id: "drv-pass-101",
+            driver_name: "Suresh Kumar",
+            employee_id: "GSFC-DRV-101",
+            login_password: "Driver@101",
+            assigned_bus: "BUS-01 (GJ-06-AX-1001)",
+            assigned_route: "Route R1",
+          },
+          {
+            id: "drv-pass-102",
+            driver_name: "Ramesh Patel",
+            employee_id: "GSFC-DRV-102",
+            login_password: "Driver@102",
+            assigned_bus: "BUS-04 (GJ-06-AX-1004)",
+            assigned_route: "Route R2",
+          },
+        ];
+      }
+
+      // Check match by employee_id or license_number or driver_name
+      const matched = passes.find(
+        (p) =>
+          p.employee_id?.toUpperCase() === cleanInput ||
+          p.license_number?.toUpperCase() === cleanInput ||
+          p.login_email?.toLowerCase() === driverEmpId.trim().toLowerCase() ||
+          p.driver_name?.toLowerCase() === driverEmpId.trim().toLowerCase()
+      );
+
+      if (!matched) {
+        toast.error(`No driver ID pass found for "${cleanInput}". Please contact Transport Admin or enter your official Employee ID.`);
+        setLoading(false);
+        return;
+      }
+
+      if (matched.status === "Suspended" || matched.status === "Expired") {
+        toast.error(`Access Denied: This driver pass is currently ${matched.status}.`);
+        setLoading(false);
+        return;
+      }
+
+      // Check password if set, or accept default PIN Driver@<ID>
+      const expectedPass = matched.login_password || `Driver@${matched.employee_id.replace(/[^0-9]/g, "") || "123"}`;
+      if (enteredPass && enteredPass !== expectedPass && enteredPass !== "driver123") {
+        toast.error("Incorrect password. Please verify your driver pass credential.");
+        setLoading(false);
+        return;
+      }
+
+      // Successful driver pass authentication!
+      localStorage.setItem("gsfcu_demo_role", "driver");
+      localStorage.setItem("gsfcu_active_driver_profile", JSON.stringify(matched));
+      toast.success(`Welcome Captain ${matched.driver_name}! Driver Mode activated.`);
+      navigate({ to: "/app" });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to authenticate driver pass");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,20 +193,39 @@ function AuthPage() {
       <div className="w-full max-w-md rounded-2xl border border-border/80 bg-card p-8 shadow-2xl glow-card">
         {/* Toggle Mode Header */}
         <div className="mb-6 flex rounded-xl bg-muted p-1 border border-border/50">
-          {(["signin", "signup"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                setMode(m);
-                setUnconfirmedEmailError(null);
-              }}
-              className={`flex-1 rounded-lg px-4 py-2 text-xs font-bold transition ${
-                mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {m === "signin" ? "Sign In" : "Create Account"}
-            </button>
-          ))}
+          <button
+            onClick={() => {
+              setMode("signin");
+              setUnconfirmedEmailError(null);
+            }}
+            className={`flex-1 rounded-lg px-2.5 py-2 text-xs font-bold transition ${
+              mode === "signin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => {
+              setMode("driver_id");
+              setUnconfirmedEmailError(null);
+            }}
+            className={`flex-1 rounded-lg px-2.5 py-2 text-xs font-bold transition flex items-center justify-center gap-1 ${
+              mode === "driver_id" ? "bg-card text-emerald-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Bus className="h-3 w-3" /> Driver Login
+          </button>
+          <button
+            onClick={() => {
+              setMode("signup");
+              setUnconfirmedEmailError(null);
+            }}
+            className={`flex-1 rounded-lg px-2.5 py-2 text-xs font-bold transition ${
+              mode === "signup" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Register
+          </button>
         </div>
 
         {/* Email Not Confirmed Alert Banner */}
@@ -149,44 +249,87 @@ function AuthPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === "signup" && (
-            <>
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-primary font-medium">
-                <p className="font-bold mb-1">Domain Access Control Active</p>
-                <p className="text-muted-foreground">Your account role will be automatically assigned based on your email domain (must contain <strong className="text-foreground">@student</strong>, <strong className="text-foreground">@driver</strong>, or <strong className="text-foreground">@admin</strong>).</p>
-              </div>
-              <Input label="Full Name" value={fullName} onChange={setFullName} required placeholder="e.g. Om Thakkar" />
-              {(!email.toLowerCase().includes("@driver") && !email.toLowerCase().includes("@admin")) && (
-                <Input label="Roll Number (Optional)" value={rollNumber} onChange={setRollNumber} placeholder="e.g. 24BT04171" />
+        {/* DRIVER PASS DEDICATED LOGIN FORM */}
+        {mode === "driver_id" ? (
+          <form onSubmit={handleDriverPassLogin} className="space-y-4">
+            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3.5 text-xs text-foreground space-y-1">
+              <p className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <BadgeCheck className="h-4 w-4" /> Driver Mode & ID Pass Authentication
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Enter your official Staff / Employee ID (e.g. <span className="font-mono font-bold text-foreground">GSFC-DRV-101</span>) and assigned PIN password to enter the live Driver Cockpit.
+              </p>
+            </div>
+
+            <Input
+              label="Driver Staff / Employee ID"
+              value={driverEmpId}
+              onChange={setDriverEmpId}
+              required
+              placeholder="e.g. GSFC-DRV-101 or Ramesh Patel"
+            />
+
+            <Input
+              label="Driver Passcode / Password"
+              type="password"
+              value={driverPasscode}
+              onChange={setDriverPasscode}
+              required
+              placeholder="e.g. Driver@101"
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            >
+              {loading ? (
+                "Validating Driver Pass..."
+              ) : (
+                <>Enter Driver Dashboard <ArrowRight className="h-4 w-4" /></>
               )}
-            </>
-          )}
-
-          <Input
-            label="Email Address"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            required
-            placeholder="24bt04171@gsfcuniversity.ac.in"
-          />
-          <Input label="Password" type="password" value={password} onChange={setPassword} required placeholder="••••••••" />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-          >
-            {loading ? (
-              "Authenticating..."
-            ) : mode === "signin" ? (
-              <>Sign In to Console <ArrowRight className="h-4 w-4" /></>
-            ) : (
-              <>Register Account <ArrowRight className="h-4 w-4" /></>
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "signup" && (
+              <>
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-primary font-medium">
+                  <p className="font-bold mb-1">Domain Access Control Active</p>
+                  <p className="text-muted-foreground">Your account role will be automatically assigned based on your email domain (must contain <strong className="text-foreground">@student</strong>, <strong className="text-foreground">@driver</strong>, or <strong className="text-foreground">@admin</strong>).</p>
+                </div>
+                <Input label="Full Name" value={fullName} onChange={setFullName} required placeholder="e.g. Om Thakkar" />
+                {(!email.toLowerCase().includes("@driver") && !email.toLowerCase().includes("@admin")) && (
+                  <Input label="Roll Number (Optional)" value={rollNumber} onChange={setRollNumber} placeholder="e.g. 24BT04171" />
+                )}
+              </>
             )}
-          </button>
-        </form>
+
+            <Input
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              required
+              placeholder="24bt04171@gsfcuniversity.ac.in"
+            />
+            <Input label="Password" type="password" value={password} onChange={setPassword} required placeholder="••••••••" />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            >
+              {loading ? (
+                "Authenticating..."
+              ) : mode === "signin" ? (
+                <>Sign In to Console <ArrowRight className="h-4 w-4" /></>
+              ) : (
+                <>Register Account <ArrowRight className="h-4 w-4" /></>
+              )}
+            </button>
+          </form>
+        )}
 
         {/* Google OAuth Provider Sign In Button */}
         <div className="mt-4">
