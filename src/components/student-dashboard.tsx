@@ -594,7 +594,7 @@ function PassPanel({ user }: { user: User }) {
                 <StatusBadge status={p.status} />
               </div>
               <div className="text-xs text-muted-foreground">
-                Validity: {p.valid_from} → {p.valid_until} · Fee:{" "}
+                Validity: {p.valid_from ? new Date(p.valid_from).toLocaleDateString() : "Active"} → {p.valid_until ? new Date(p.valid_until).toLocaleDateString() : "1 Year"} · Fee:{" "}
                 <span className={p.fee_paid ? "text-emerald-600 font-semibold" : "text-amber-600 font-semibold"}>
                   {p.fee_paid ? "Verified Paid" : "Payment Pending"}
                 </span>
@@ -774,7 +774,7 @@ function DigitalPass({
               <div>
                 <div className="text-[10px] uppercase tracking-wider opacity-70 font-mono">Validity Period</div>
                 <div className="text-[11px] font-semibold font-mono text-slate-200">
-                  {pass.valid_from} → {pass.valid_until}
+                  {pass.valid_from ? new Date(pass.valid_from).toLocaleDateString() : "Valid"} → {pass.valid_until ? new Date(pass.valid_until).toLocaleDateString() : "1 Year"}
                 </div>
               </div>
             </div>

@@ -313,7 +313,30 @@ export const supabase = {
           }
 
           if (table === "bus_passes") {
-            const rows = await neonSql`SELECT * FROM public.bus_passes ORDER BY created_at DESC;`;
+            const rawRows = await neonSql`SELECT * FROM public.bus_passes ORDER BY created_at DESC;`;
+            const rows = rawRows.map((r: any) => ({
+              ...r,
+              valid_from: r.valid_from instanceof Date ? r.valid_from.toISOString().split("T")[0] : String(r.valid_from || ""),
+              valid_until: r.valid_until instanceof Date ? r.valid_until.toISOString().split("T")[0] : String(r.valid_until || ""),
+              created_at: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at || ""),
+            }));
+            return resolve({ data: rows, error: null });
+          }
+
+          if (table === "alerts") {
+            const rawRows = await neonSql`
+              SELECT a.id, a.route_id, a.driver_id, a.alert_type, a.message, a.created_at,
+                     r.route_number, r.name as route_name
+              FROM public.alerts a
+              LEFT JOIN public.routes r ON a.route_id = r.id
+              ORDER BY a.created_at DESC
+              LIMIT 50;
+            `;
+            const rows = rawRows.map((a: any) => ({
+              ...a,
+              created_at: a.created_at instanceof Date ? a.created_at.toISOString() : String(a.created_at || ""),
+              routes: a.route_number ? { route_number: a.route_number, name: a.route_name } : null,
+            }));
             return resolve({ data: rows, error: null });
           }
 
