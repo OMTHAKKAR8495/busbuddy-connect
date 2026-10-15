@@ -23,13 +23,25 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ reset }: { error: unknown; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+      ? error
+      : JSON.stringify(error, null, 2);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">Please try again. If this continues, contact support.</p>
+        {errorMessage && (
+          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-md text-left overflow-auto max-h-40 font-mono">
+            {errorMessage}
+          </div>
+        )}
         <button
           onClick={() => {
             router.invalidate();
