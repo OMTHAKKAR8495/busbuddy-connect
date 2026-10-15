@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: { id: number; actor_id: string | null; action: string; subject_id: string | null; details: Json; created_at: string }
+        Insert: { id?: number; actor_id?: string | null; action: string; subject_id?: string | null; details?: Json; created_at?: string }
+        Update: { id?: number; actor_id?: string | null; action?: string; subject_id?: string | null; details?: Json; created_at?: string }
+        Relationships: []
+      }
+      pass_scans: {
+        Row: { id: number; pass_id: string | null; scanner_id: string; bus_id: string | null; route_id: string | null; result: boolean; reason: string | null; ip: string | null; created_at: string }
+        Insert: { id?: number; pass_id?: string | null; scanner_id: string; bus_id?: string | null; route_id?: string | null; result: boolean; reason?: string | null; ip?: string | null; created_at?: string }
+        Update: { id?: number; pass_id?: string | null; scanner_id?: string; bus_id?: string | null; route_id?: string | null; result?: boolean; reason?: string | null; ip?: string | null; created_at?: string }
+        Relationships: []
+      }
+      pass_applications: {
+        Row: { id: string; student_id: string; route_id: string; pickup_stop_id: string | null; status: string; created_at: string }
+        Insert: { id?: string; student_id: string; route_id: string; pickup_stop_id?: string | null; status?: string; created_at?: string }
+        Update: { id?: string; student_id?: string; route_id?: string; pickup_stop_id?: string | null; status?: string; created_at?: string }
+        Relationships: [
+          { foreignKeyName: "pass_applications_route_id_fkey"; columns: ["route_id"]; isOneToOne: false; referencedRelation: "routes"; referencedColumns: ["id"] },
+          { foreignKeyName: "pass_applications_pickup_stop_id_fkey"; columns: ["pickup_stop_id"]; isOneToOne: false; referencedRelation: "stops"; referencedColumns: ["id"] },
+        ]
+      }
+      used_qr_tokens: {
+        Row: { jti: string; expires_at: string }
+        Insert: { jti: string; expires_at: string }
+        Update: { jti?: string; expires_at?: string }
+        Relationships: []
+      }
+      driver_shifts: {
+        Row: { id: string; driver_id: string; bus_id: string | null; route_id: string | null; started_at: string; ended_at: string | null }
+        Insert: { id?: string; driver_id: string; bus_id?: string | null; route_id?: string | null; started_at?: string; ended_at?: string | null }
+        Update: { id?: string; driver_id?: string; bus_id?: string | null; route_id?: string | null; started_at?: string; ended_at?: string | null }
+        Relationships: []
+      }
+      driver_profiles: {
+        Row: { user_id: string; licence_number: string; blood_group: string | null; emergency_contact: string | null; employee_id: string }
+        Insert: { user_id: string; licence_number: string; blood_group?: string | null; emergency_contact?: string | null; employee_id: string }
+        Update: { user_id?: string; licence_number?: string; blood_group?: string | null; emergency_contact?: string | null; employee_id?: string }
+        Relationships: []
+      }
       alerts: {
         Row: {
           alert_type: Database["public"]["Enums"]["alert_type"]
@@ -410,7 +449,7 @@ export type Database = {
     }
     Enums: {
       alert_type: "breakdown" | "traffic_delay" | "route_change" | "other"
-      app_role: "student" | "driver" | "admin"
+      app_role: "student" | "driver" | "scanner" | "admin"
       pass_status: "pending" | "active" | "expired" | "rejected"
     }
     CompositeTypes: {
@@ -540,7 +579,7 @@ export const Constants = {
   public: {
     Enums: {
       alert_type: ["breakdown", "traffic_delay", "route_change", "other"],
-      app_role: ["student", "driver", "admin"],
+      app_role: ["student", "driver", "scanner", "admin"],
       pass_status: ["pending", "active", "expired", "rejected"],
     },
   },

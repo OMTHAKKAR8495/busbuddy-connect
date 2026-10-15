@@ -2,10 +2,14 @@
   "appId": "in.ac.gsfcuniversity.transit",
   "appName": "GSFCU Transit",
   "webDir": "dist",
-  "bundledWebRuntime": false,
   "server": {
     "url": "https://busbuddy-connect.vercel.app",
-    "cleartext": true
+    "cleartext": false,
+    "allowNavigation": ["busbuddy-connect.vercel.app", "*.supabase.co"]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
   },
   "plugins": {
     "SplashScreen": {

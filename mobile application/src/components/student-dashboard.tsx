@@ -394,7 +394,7 @@ function PassPanel({ user }: { user: User }) {
     (approvedStorage["demo"]
       ? {
           id: "demo-pass-01",
-          secret: "sec9988",
+          secret: "[REMOVED_CREDENTIAL]",
           valid_from: "2026-07-27",
           valid_until: "2027-01-27",
           routes: { route_number: "R1", name: "Soma Talav → GSFCU" },

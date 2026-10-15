@@ -56,8 +56,8 @@ npm run dev
 Configure your Neon PostgreSQL credentials in `.env.local`:
 
 ```env
-DATABASE_URL=postgresql://user:password@ep-billowing-pine-b5mr2ja6-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
-VITE_NEON_DATABASE_URL=postgresql://user:password@ep-billowing-pine-b5mr2ja6-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=[DATABASE_URL_REMOVED]
+VITE_SUPABASE_URL=https://your-project.supabase.co
 PORT=3001
 ```
 

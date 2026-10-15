@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    try {
-      const { data } = await supabase.auth.getUser();
-      return { user: data?.user ?? null };
-    } catch (e) {
-      return { user: null };
-    }
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+    const { data: roles, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id);
+    if (roleError || !roles?.length) throw redirect({ to: "/auth" });
+    return { user: data.user, roles: roles.map(({ role }) => role) };
   },
   component: () => <Outlet />,
 });

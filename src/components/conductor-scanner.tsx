@@ -23,7 +23,7 @@ import {
 import AppShell from "./app-shell";
 import { toast } from "sonner";
 import jsQR from "jsqr";
-import { supabase } from "@/integrations/supabase/client";
+import { verifyPassToken } from "@/lib/pass-token.functions";
 
 type PassVerificationResult = {
   isValid: boolean;
@@ -47,98 +47,6 @@ type PassVerificationResult = {
   scannedAt: string;
 };
 
-// Pre-seeded Demo Passes for instant Scanner demonstration during evaluation
-const DEMO_STUDENT_PASSES = [
-  {
-    label: "Om Thakkar (24BT04171 — Route 1 Soma Talav)",
-    payload: JSON.stringify({
-      passId: "pass-gsfcu-001",
-      studentId: "u-om-thakkar",
-      roll: "24BT04171",
-      route: "Route 1",
-      token: "p001.w98.sec1",
-    }),
-    data: {
-      isValid: true,
-      student: {
-        name: "Om Thakkar",
-        rollNumber: "24BT04171",
-        department: "Computer Science & Engineering",
-        photoUrl: null,
-        phone: "+91 98765 43210",
-      },
-      pass: {
-        passId: "GSFCU-PASS-2026-001",
-        routeNumber: "Route 1",
-        routeName: "Soma Talav (BPC Pump) → GSFC University",
-        pickupStop: "Soma Talav (BPC Pump)",
-        validFrom: "2026-07-01",
-        validUntil: "2027-01-31",
-        feeStatus: "Verified Paid" as const,
-      },
-    },
-  },
-  {
-    label: "Alex Sharma (22CS089 — Route 2 Sama Savli)",
-    payload: JSON.stringify({
-      passId: "pass-gsfcu-002",
-      studentId: "u-alex-sharma",
-      roll: "22CS089",
-      route: "Route 2",
-      token: "p002.w98.sec2",
-    }),
-    data: {
-      isValid: true,
-      student: {
-        name: "Alex Sharma",
-        rollNumber: "22CS089",
-        department: "Chemical Engineering",
-        photoUrl: null,
-        phone: "+91 98123 45678",
-      },
-      pass: {
-        passId: "GSFCU-PASS-2026-002",
-        routeNumber: "Route 2",
-        routeName: "Parivar Char Rasta → GSFC University",
-        pickupStop: "Amit Nagar Circle",
-        validFrom: "2026-07-01",
-        validUntil: "2027-01-31",
-        feeStatus: "Verified Paid" as const,
-      },
-    },
-  },
-  {
-    label: "Priya Patel (23ME044 — EXPIRED PASS DEMO)",
-    payload: JSON.stringify({
-      passId: "pass-gsfcu-999",
-      studentId: "u-priya-patel",
-      roll: "23ME044",
-      route: "Route 6",
-      token: "expired.token.99",
-    }),
-    data: {
-      isValid: false,
-      reason: "Pass validity period expired on 2026-05-31",
-      student: {
-        name: "Priya Patel",
-        rollNumber: "23ME044",
-        department: "Mechanical Engineering",
-        photoUrl: null,
-        phone: "+91 97765 11223",
-      },
-      pass: {
-        passId: "GSFCU-PASS-2025-999",
-        routeNumber: "Route 6",
-        routeName: "Voltamp Company → GSFC University",
-        pickupStop: "Susen Circle",
-        validFrom: "2025-11-01",
-        validUntil: "2026-05-31",
-        feeStatus: "Pending" as const,
-      },
-    },
-  },
-];
-
 export default function ConductorScannerPage({
   onOverrideRole,
   overrideRole,
@@ -149,7 +57,7 @@ export default function ConductorScannerPage({
   const [scanning, setScanning] = useState(true);
   const [cameraActive, setCameraActive] = useState(false);
   const [manualInput, setManualInput] = useState("");
-  const [selectedDemoIndex, setSelectedDemoIndex] = useState<number | null>(null);
+  const [busId, setBusId] = useState("");
   const [scanResult, setScanResult] = useState<PassVerificationResult | null>(null);
   const [history, setHistory] = useState<PassVerificationResult[]>([]);
 
@@ -226,7 +134,7 @@ export default function ConductorScannerPage({
           });
 
           if (code && code.data) {
-            console.log("[jsQR] Detected QR Payload:", code.data);
+
             isScanningFrame = false;
             processScan(code.data);
             return;
@@ -253,184 +161,34 @@ export default function ConductorScannerPage({
     };
   }, []);
 
-  // Save scan record for student attendance CSV report generation
-  function saveAuditLogToStorage(res: PassVerificationResult) {
-    try {
-      const existing = JSON.parse(localStorage.getItem("gsfcu_scan_audit_logs") || "[]");
-      const d = new Date();
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      
-      const entry = {
-        id: "scan-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-        student_name: res.student.name,
-        roll_number: res.student.rollNumber,
-        department: res.student.department,
-        route_number: res.pass.routeNumber,
-        pickup_stop: res.pass.pickupStop,
-        fee_status: res.pass.feeStatus,
-        status: res.isValid ? "Boarded (Valid Pass)" : "Entry Denied",
-        scanned_at: d.toISOString(),
-        scan_date: d.toISOString().split("T")[0],
-        scan_time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        scan_day: days[d.getDay()],
-        month_year: `${months[d.getMonth()]} ${d.getFullYear()}`
-      };
-
-      const updated = [entry, ...existing];
-      localStorage.setItem("gsfcu_scan_audit_logs", JSON.stringify(updated));
-    } catch (e) {
-      console.error("Failed to save scan audit log:", e);
-    }
-  }
-
-  // Process and verify scanned pass payload
-  async function processScan(payloadString: string, demoPreset?: (typeof DEMO_STUDENT_PASSES)[0]["data"]) {
+  async function processScan(token: string) {
     stopPhoneCamera();
     setScanning(false);
-    const now = new Date().toLocaleTimeString();
-
-    if (demoPreset) {
-      const res: PassVerificationResult = {
-        ...demoPreset,
-        scannedAt: now,
-      };
-      setScanResult(res);
-      setHistory((prev) => [res, ...prev.slice(0, 9)]);
-      saveAuditLogToStorage(res);
-
-      if (res.isValid) {
-        toast.success(`✓ PASS VERIFIED: Welcome aboard, ${res.student.name}!`);
-        playBeep(true);
-      } else {
-        toast.error(`🚫 ENTRY DENIED: ${res.reason}`);
-        playBeep(false);
-      }
+    if (!busId.trim() || !token.trim()) {
+      toast.error("Select your assigned bus and scan a pass token.");
       return;
     }
-
     try {
-      const parsed = JSON.parse(payloadString);
-      let studentName = parsed.studentName || parsed.name || parsed.student || "";
-      let rollNumber = parsed.roll || parsed.rollNumber || "";
-      let department = parsed.department || "Computer Science & Engineering";
-      let phone = parsed.phone || "+91 98765 43210";
-      let routeNumber = parsed.route || parsed.routeNumber || "Route 1";
-      let pickupStop = parsed.pickupStop || "Soma Talav (BPC Pump)";
-      let passId = parsed.passId || "GSFCU-PASS-2026-001";
-
-      // 1. Check local student applications for matches
-      try {
-        const localApps = JSON.parse(localStorage.getItem("gsfcu_student_applications") || "[]");
-        const foundLocal = localApps.find(
-          (a: any) =>
-            (rollNumber && a.roll_number?.toLowerCase() === rollNumber.toLowerCase()) ||
-            (passId && a.id === passId) ||
-            (studentName && a.student_name?.toLowerCase() === studentName.toLowerCase())
-        );
-        if (foundLocal) {
-          if (!studentName) studentName = foundLocal.student_name;
-          if (!rollNumber) rollNumber = foundLocal.roll_number;
-          if (foundLocal.routes?.route_number) routeNumber = foundLocal.routes.route_number;
-          if (foundLocal.pickup_stop) pickupStop = foundLocal.pickup_stop;
-        }
-      } catch (e) {}
-
-      // 2. Query Supabase database if student name or roll number is still missing
-      if ((!studentName || studentName === "Student" || studentName === "omq") && (rollNumber || passId)) {
-        try {
-          const { data: dbPass } = await (supabase as any)
-            .from("bus_pass_applications_master")
-            .select("*")
-            .or(`roll_number.eq.${rollNumber},id.eq.${passId}`)
-            .maybeSingle();
-
-          if (dbPass) {
-            studentName = dbPass.student_name || studentName;
-            rollNumber = dbPass.roll_number || rollNumber;
-            routeNumber = dbPass.route_number || routeNumber;
-            pickupStop = dbPass.pickup_stop || pickupStop;
-          } else if (rollNumber) {
-            const { data: profile } = await (supabase as any)
-              .from("profiles")
-              .select("*")
-              .eq("roll_number", rollNumber)
-              .maybeSingle();
-
-            if (profile?.full_name) {
-              studentName = profile.full_name;
-            }
-          }
-        } catch (err) {
-          console.warn("Supabase lookup for scanned QR failed:", err);
-        }
-      }
-
-      // Final fallback resolution if name is missing
-      if (!studentName || studentName === "omq") {
-        if (parsed.studentName || parsed.name || parsed.student) {
-          studentName = parsed.studentName || parsed.name || parsed.student;
-        } else if (rollNumber) {
-          studentName = rollNumber;
-        } else {
-          studentName = "GSFC University Student";
-        }
-      }
-
+      const response = await verifyPassToken({ data: { token: token.trim(), busId: busId.trim() } });
       const res: PassVerificationResult = {
-        isValid: true,
-        student: {
-          name: studentName,
-          rollNumber: rollNumber || "24bt04181",
-          department: department,
-          photoUrl: null,
-          phone: phone,
-        },
-        pass: {
-          passId: passId,
-          routeNumber: routeNumber.startsWith("Route") ? routeNumber : `Route ${routeNumber}`,
-          routeName: `${pickupStop} → GSFC University`,
-          pickupStop: pickupStop,
-          validFrom: parsed.validFrom || "2026-07-01",
-          validUntil: parsed.validUntil || "2027-01-31",
-          feeStatus: "Verified Paid",
-        },
-        scannedAt: now,
+        isValid: response.valid,
+        reason: response.reason,
+        student: { name: response.firstName ?? "", rollNumber: response.maskedRollNumber ?? "", department: "", photoUrl: null, phone: "" },
+        pass: { passId: "", routeNumber: response.route ?? "", routeName: response.route ?? "", pickupStop: "", validFrom: "", validUntil: "", feeStatus: response.valid ? "Verified Paid" : "Unpaid" },
+        scannedAt: new Date().toLocaleTimeString(),
       };
-
       setScanResult(res);
-      setHistory((prev) => [res, ...prev.slice(0, 9)]);
-      saveAuditLogToStorage(res);
-      toast.success(`✓ PASS VERIFIED: Welcome, ${res.student.name}!`);
-      playBeep(true);
+      setHistory((previous) => [res, ...previous.slice(0, 9)]);
+      if (res.isValid) {
+        toast.success("Pass verified. Boarding allowed.");
+        playBeep(true);
+      } else {
+        toast.error("Pass verification failed.");
+        playBeep(false);
+      }
     } catch {
-      // Fallback for unparseable raw text QR codes
-      const fallbackName = payloadString.length < 30 ? payloadString : "GSFC University Student";
-      const res: PassVerificationResult = {
-        isValid: true,
-        student: {
-          name: fallbackName,
-          rollNumber: "24bt04181",
-          department: "Computer Science & Engineering",
-          photoUrl: null,
-          phone: "+91 98765 43210",
-        },
-        pass: {
-          passId: "GSFCU-PASS-2026-001",
-          routeNumber: "Route 1",
-          routeName: "Soma Talav (BPC Pump) → GSFC University",
-          pickupStop: "Soma Talav (BPC Pump)",
-          validFrom: "2026-07-01",
-          validUntil: "2027-01-31",
-          feeStatus: "Verified Paid",
-        },
-        scannedAt: now,
-      };
-      setScanResult(res);
-      setHistory((prev) => [res, ...prev.slice(0, 9)]);
-      saveAuditLogToStorage(res);
-      toast.success(`✓ QR CODE DECODED & PASS VERIFIED!`);
-      playBeep(true);
+      toast.error("Pass verification failed. Try again or contact the administrator.");
+      playBeep(false);
     }
   }
 
@@ -455,8 +213,7 @@ export default function ConductorScannerPage({
           if (code && code.data) {
             processScan(code.data);
           } else {
-            // Fallback decode preset if image contrast is tricky
-            processScan(DEMO_STUDENT_PASSES[0].payload, DEMO_STUDENT_PASSES[0].data);
+            toast.error("No QR token found in the image.");
           }
         }
       };
@@ -478,7 +235,7 @@ export default function ConductorScannerPage({
       osc.start();
       osc.stop(ctx.currentTime + (success ? 0.2 : 0.4));
     } catch (e) {
-      console.log("Audio feedback disabled:", e);
+      void e;
     }
   }
 
@@ -486,7 +243,7 @@ export default function ConductorScannerPage({
     setScanResult(null);
     setScanning(true);
     setManualInput("");
-    setSelectedDemoIndex(null);
+
   }
 
   return (
@@ -622,29 +379,9 @@ export default function ConductorScannerPage({
                 />
               </div>
 
-              {/* Quick Scan Preset Dropdown */}
               <div className="mt-4 w-full space-y-1.5">
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> DEMO EVALUATION PRESETS
-                </label>
-                <select
-                  value={selectedDemoIndex ?? ""}
-                  onChange={(e) => {
-                    const idx = Number(e.target.value);
-                    if (!isNaN(idx)) {
-                      setSelectedDemoIndex(idx);
-                      processScan(DEMO_STUDENT_PASSES[idx].payload, DEMO_STUDENT_PASSES[idx].data);
-                    }
-                  }}
-                  className="w-full rounded-xl border border-white/20 bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white outline-none focus:border-emerald-400 transition min-h-[42px]"
-                >
-                  <option value="">Select student pass to scan…</option>
-                  {DEMO_STUDENT_PASSES.map((preset, idx) => (
-                    <option key={idx} value={idx}>
-                      {preset.label}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-xs font-semibold text-muted-foreground">Assigned bus ID</label>
+                <input value={busId} onChange={(event) => setBusId(event.target.value)} maxLength={36} className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-xs font-mono" placeholder="Bus UUID" />
               </div>
             </div>
 

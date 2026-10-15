@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppShell from "./app-shell";
 import LiveMap from "./live-map";
 import { QRCodeSVG } from "qrcode.react";
+import { issuePassToken } from "@/lib/pass-token.functions";
 import { toast } from "sonner";
 import {
   MapPin,
@@ -435,6 +436,15 @@ function PassPanel({ user }: { user: User }) {
     refetchInterval: 2000,
   });
 
+  const { data: applications = [], refetch: refetchApplications } = useQuery({
+    queryKey: ["my-pass-applications"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pass_applications").select("id, status, created_at, routes(route_number,name)").eq("student_id", user.userId).order("created_at", { ascending: false });
+      if (error) throw new Error("Unable to load pass applications");
+      return data ?? [];
+    },
+  });
+
   const { data: routes = [] } = useQuery({
     queryKey: ["routes-simple"],
     queryFn: async () =>
@@ -444,102 +454,20 @@ function PassPanel({ user }: { user: User }) {
   const [showForm, setShowForm] = useState(false);
   const [routeId, setRouteId] = useState("");
   const [stopId, setStopId] = useState("");
-  const [approvedStorage, setApprovedStorage] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    const checkStorage = () => {
-      try {
-        const map = JSON.parse(localStorage.getItem("gsfcu_approved_passes") || "{}");
-        setApprovedStorage(map);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    checkStorage();
-    const interval = setInterval(checkStorage, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const approvedFromStorage = passes.find((p) => approvedStorage[p.id] || approvedStorage["all"]);
-  const active =
-    passes.find((p) => p.status === "active") ||
-    approvedFromStorage ||
-    (approvedStorage["demo"]
-      ? {
-          id: "demo-pass-01",
-          secret: "sec9988",
-          valid_from: "2026-07-27",
-          valid_until: "2027-01-27",
-          routes: { route_number: "R1", name: "Soma Talav → GSFCU" },
-        }
-      : null);
-
-  const pending = passes.find((p) => p.status === "pending");
-
-  function handleInstantApproveDemo() {
-    try {
-      const map = JSON.parse(localStorage.getItem("gsfcu_approved_passes") || "{}");
-      map["all"] = true;
-      map["demo"] = true;
-      if (pending) map[pending.id] = true;
-      localStorage.setItem("gsfcu_approved_passes", JSON.stringify(map));
-      setApprovedStorage(map);
-      toast.success("Bus Pass approved & QR entry code generated!");
-      refetch();
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  const active = passes.find((p) => p.status === "active");
+  const pending = applications.find((application) => application.status === "pending");
 
   async function apply() {
     if (!routeId) return toast.error("Pick a route");
 
-    const selectedRouteObj = routes.find((r) => r.id === routeId);
-
-    const newAppObj = {
-      id: "pass-" + Date.now(),
-      student_id: user.userId,
-      student_name: user.profile.full_name,
-      roll_number: user.profile.roll_number || "24BT04171",
-      route_id: routeId,
-      routes: {
-        route_number: selectedRouteObj?.route_number || "R1",
-        name: selectedRouteObj?.name || "Soma Talav → GSFCU",
-      },
-      profiles: {
-        full_name: user.profile.full_name,
-        roll_number: user.profile.roll_number || "24BT04171",
-      },
-      status: "pending",
-      fee_paid: false,
-      valid_from: new Date().toISOString().split("T")[0],
-      valid_until: "2027-01-28",
-      created_at: new Date().toISOString(),
-    };
-
-    try {
-      const existingApps = JSON.parse(localStorage.getItem("gsfcu_student_applications") || "[]");
-      existingApps.unshift(newAppObj);
-      localStorage.setItem("gsfcu_student_applications", JSON.stringify(existingApps));
-    } catch (e) {
-      console.error("Local application store:", e);
-    }
-
-    try {
-      await supabase.from("bus_passes").insert({
-        student_id: user.userId,
-        route_id: routeId,
-        pickup_stop_id: stopId || null,
-      });
-    } catch (e) {
-      console.log("Supabase pass insert background:", e);
-    }
-
+    const { error } = await supabase.from("pass_applications").insert({ student_id: user.userId, route_id: routeId, pickup_stop_id: stopId || null });
+    if (error) return toast.error("Unable to submit your application. Try again later.");
     toast.success("✓ Bus pass application submitted! Reflected live in Admin HQ Queue.");
     setShowForm(false);
     setRouteId("");
     setStopId("");
     refetch();
+    refetchApplications();
   }
 
   return (
@@ -560,14 +488,7 @@ function PassPanel({ user }: { user: User }) {
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-2.5 justify-center">
-              {pending && (
-                <button
-                  onClick={handleInstantApproveDemo}
-                  className="rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-emerald-700 flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="h-4 w-4" /> Instant Demo Approve & Issue Pass
-                </button>
-              )}
+              {pending && <span className="text-sm text-muted-foreground">Application pending administrator review.</span>}
               {!pending && !showForm && (
                 <button
                   onClick={() => setShowForm(true)}
@@ -584,7 +505,7 @@ function PassPanel({ user }: { user: User }) {
       <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
         <h3 className="font-display text-lg font-bold">Pass Application History</h3>
         <ul className="mt-4 space-y-3">
-          {passes.length === 0 && <li className="text-sm text-muted-foreground">No applications found.</li>}
+          {passes.length === 0 && applications.length === 0 && <li className="text-sm text-muted-foreground">No applications found.</li>}
           {passes.map((p) => (
             <li key={p.id} className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm space-y-1">
               <div className="flex justify-between items-center">
@@ -599,6 +520,12 @@ function PassPanel({ user }: { user: User }) {
                   {p.fee_paid ? "Verified Paid" : "Payment Pending"}
                 </span>
               </div>
+            </li>
+          ))}
+          {applications.map((application) => (
+            <li key={application.id} className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm space-y-1">
+              <div className="flex justify-between items-center"><span className="font-bold">{application.routes?.route_number}: {application.routes?.name}</span><StatusBadge status={application.status} /></div>
+              <div className="text-xs text-muted-foreground">Submitted {new Date(application.created_at).toLocaleDateString()}</div>
             </li>
           ))}
         </ul>
@@ -688,7 +615,6 @@ function DigitalPass({
 }: {
   pass: {
     id: string;
-    secret: string;
     valid_until: string;
     valid_from: string;
     routes?: { route_number?: string; name?: string } | null;
@@ -696,27 +622,26 @@ function DigitalPass({
   };
   user: User;
 }) {
+  const [qrToken, setQrToken] = useState("");
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const i = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(i);
-  }, []);
+    let active = true;
+    const refresh = async () => {
+      try {
+        const { token } = await issuePassToken({ data: { passId: pass.id } });
+        if (active) setQrToken(token);
+      } catch {
+        if (active) setQrToken("");
+      }
+    };
+    void refresh();
+    const refreshTimer = setInterval(refresh, 25_000);
+    const clockTimer = setInterval(() => setTick((value) => value + 1), 1000);
+    return () => { active = false; clearInterval(refreshTimer); clearInterval(clockTimer); };
+  }, [pass.id]);
 
-  const windowTime = Math.floor(Date.now() / 15000); // 15-second rotation window
-  const token = `${pass.id.slice(0, 6)}.${windowTime.toString(36)}.${pass.secret.slice(0, 4)}`;
-  const qrValue = JSON.stringify({
-    passId: pass.id,
-    studentId: user.userId,
-    studentName: user.profile.full_name,
-    name: user.profile.full_name,
-    student: user.profile.full_name,
-    roll: user.profile.roll_number,
-    route: pass.routes?.route_number,
-    token,
-  });
-
-  const secondsRemaining = 15 - (Math.floor(Date.now() / 1000) % 15);
+  const secondsRemaining = qrToken ? Math.max(0, 30 - (Math.floor(Date.now() / 1000) % 30)) : 0;
   void tick;
 
   return (
@@ -781,7 +706,7 @@ function DigitalPass({
 
             {/* Dynamic Rotating QR Code */}
             <div className="relative rounded-2xl bg-white p-3 shadow-lg border-2 border-emerald-400/50 flex flex-col items-center shrink-0">
-              <QRCodeSVG value={qrValue} size={110} level="M" />
+              {qrToken ? <QRCodeSVG value={qrToken} size={110} level="M" /> : <div className="flex h-[110px] w-[110px] items-center justify-center text-xs">QR unavailable</div>}
               <div className="mt-1 text-center font-mono text-[8px] font-bold text-slate-900 tracking-tighter">
                 ENTRY SCANNER QR
               </div>
@@ -792,7 +717,7 @@ function DigitalPass({
           <div className="mt-5 flex items-center justify-between rounded-xl bg-black/40 px-4 py-3 text-xs border border-white/10">
             <div className="flex items-center gap-2">
               <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-              <span className="font-mono text-emerald-400 font-bold text-[11px]">{token}</span>
+              <span className="font-mono text-emerald-400 font-bold text-[11px]">{qrToken ? "Rotating security token" : "Token unavailable"}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[11px] opacity-80">

@@ -23,7 +23,8 @@ import {
   IdCard,
   Edit,
   Printer,
-  Sparkles
+  Sparkles,
+  X,
 } from "lucide-react";
 
 type User = { userId: string; role: "driver"; profile: { full_name: string } };
@@ -1941,4 +1942,3 @@ function DriverOfficialPassView({
     </div>
   );
 }
-

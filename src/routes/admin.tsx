@@ -1,286 +1,98 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import AdminDashboard from "@/components/admin-dashboard";
-import { ShieldCheck, Lock, ArrowRight, Key, Award, Eye, EyeOff, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// ⛔ SECURITY: This file is the ONLY way to access Admin HQ.
-// AdminDashboard is NOT rendered anywhere else in the app.
-// Access requires BOTH email AND password verification.
-// The 1-Click bypass button has been removed for production security.
-
 export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [
-      { title: "Transport Admin HQ Portal — GSFCU Transit" },
-      { name: "description", content: "Restricted — Authorized Transport Admin Personnel Only." },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-  }),
-  component: AdminRouteComponent,
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+  },
+  head: () => ({ meta: [{ title: "Transport Admin — GSFCU Transit" }, { name: "robots", content: "noindex, nofollow" }] }),
+  component: AdminRoute,
 });
 
-// ⛔ ADMIN CREDENTIALS (change in production via env vars)
-const ADMIN_EMAIL = "omthakkar@gsfcuniversity.ac.in";
-const ADMIN_PASSWORD = "7043313347@Om";
-const ADMIN_PASSWORD_ALT = "admin123"; // secondary evaluation key
-const MAX_ATTEMPTS = 5;
+function AdminRoute() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [factorId, setFactorId] = useState("");
+  const [totpUri, setTotpUri] = useState("");
+  const [user, setUser] = useState<{ id: string; fullName: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-function AdminRouteComponent() {
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    if (typeof window !== "undefined") {
-      const session = localStorage.getItem("gsfc_admin_auth_session");
-      if (!session) return false;
-      try {
-        const parsed = JSON.parse(session);
-        // Expire session after 8 hours
-        if (Date.now() - parsed.ts > 8 * 60 * 60 * 1000) {
-          localStorage.removeItem("gsfc_admin_auth_session");
-          return false;
-        }
-        return parsed.valid === true;
-      } catch {
-        return false;
+  useEffect(() => {
+    if (!user) return;
+    let lastActivity = Date.now();
+    const mark = () => { lastActivity = Date.now(); };
+    const events: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "touchstart"];
+    events.forEach((event) => window.addEventListener(event, mark, { passive: true }));
+    const timer = window.setInterval(() => {
+      if (Date.now() - lastActivity >= 8 * 60 * 60 * 1000) void supabase.auth.signOut().then(() => setUser(null));
+    }, 60_000);
+    return () => { events.forEach((event) => window.removeEventListener(event, mark)); window.clearInterval(timer); };
+  }, [user]);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy(true); setError("");
+    try {
+      const { data: auth, error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (authError || !auth.user?.email_confirmed_at) throw new Error("Sign in failed. Verify your email and credentials.");
+      const { data: roles, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", auth.user.id);
+      if (roleError || !roles?.some((row) => row.role === "admin")) {
+        await supabase.auth.signOut();
+        throw new Error("This account is not authorized for administration.");
       }
-    }
-    return false;
-  });
-
-  const [adminEmail, setAdminEmail] = useState("omthakkar@gsfcuniversity.ac.in");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [attempts, setAttempts] = useState(0);
-  const [isLocked, setIsLocked] = useState(false);
-
-  function handleAdminLogin(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (isLocked) {
-      toast.error("🔒 Too many failed attempts. Portal is locked. Please contact Transport Admin.");
-      return;
-    }
-
-    setLoading(true);
-
-    const emailTrim = adminEmail.trim().toLowerCase();
-    const passTrim = adminPassword.trim();
-
-    // ⛔ SECURITY: Both email AND password must match exactly
-    const emailValid = emailTrim === ADMIN_EMAIL.toLowerCase() || emailTrim === "admin@gsfcuniversity.ac.in";
-    const passValid = passTrim === ADMIN_PASSWORD || passTrim === ADMIN_PASSWORD_ALT;
-
-    if (emailValid && passValid) {
-      // Persist timed session (8 hours)
-      localStorage.setItem("gsfc_admin_auth_session", JSON.stringify({ valid: true, ts: Date.now(), email: emailTrim }));
-      setIsAdminAuthenticated(true);
-      toast.success("✅ Transport Admin HQ Authorized — Welcome Om Thakkar!");
-      setLoading(false);
-      return;
-    }
-
-    // Try Supabase auth as fallback (for future DB-backed admin accounts)
-    supabase.auth
-      .signInWithPassword({
-        email: emailTrim.includes("@") ? emailTrim : `${emailTrim}@gsfcuniversity.ac.in`,
-        password: passTrim,
-      })
-      .then(async ({ data: authData, error }) => {
-        setLoading(false);
-        if (error || !authData.user) {
-          const newAttempts = attempts + 1;
-          setAttempts(newAttempts);
-          if (newAttempts >= MAX_ATTEMPTS) {
-            setIsLocked(true);
-            toast.error(`🔒 Portal locked after ${MAX_ATTEMPTS} failed attempts. Contact Transport Admin.`);
-          } else {
-            toast.error(`❌ Invalid credentials. ${MAX_ATTEMPTS - newAttempts} attempt(s) remaining.`);
-          }
-          return;
-        }
-
-        // Check if Supabase user has admin role
-        const { data: roleRow } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", authData.user.id)
-          .maybeSingle();
-
-        if ((roleRow?.role as string) === "admin") {
-          localStorage.setItem("gsfc_admin_auth_session", JSON.stringify({ valid: true, ts: Date.now(), email: emailTrim }));
-          setIsAdminAuthenticated(true);
-          toast.success("✅ Admin account verified via GSFCU Supabase. Welcome!");
-        } else {
-          setAttempts((a) => a + 1);
-          await supabase.auth.signOut();
-          toast.error("❌ Your account does not have Transport Admin privileges.");
-        }
-      });
+      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw new Error("Unable to verify multi-factor authentication.");
+      if (assurance.currentLevel === "aal2") {
+        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", auth.user.id).maybeSingle();
+        setUser({ id: auth.user.id, fullName: profile?.full_name ?? "Administrator" });
+        return;
+      }
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw new Error("Unable to load MFA factors.");
+      const factor = factors.totp.find((item) => item.status === "verified");
+      if (factor) setFactorId(factor.id);
+      else {
+        const { data: enrolled, error: enrollError } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "GSFCU Transit Admin" });
+        if (enrollError || !enrolled) throw new Error("Unable to enroll an authenticator.");
+        setFactorId(enrolled.id);
+        setTotpUri(enrolled.totp.uri);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Authentication failed.");
+    } finally { setBusy(false); }
   }
 
-  function handleSignOutAdmin() {
-    localStorage.removeItem("gsfc_admin_auth_session");
-    // Also clear old key if present
-    localStorage.removeItem("gsfc_admin_auth");
-    setIsAdminAuthenticated(false);
-    setAdminPassword("");
-    toast.success("🔒 Admin session ended. Portal locked.");
+  async function verifyMfa(event: React.FormEvent) {
+    event.preventDefault(); setBusy(true); setError("");
+    try {
+      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: otp.trim() });
+      if (verifyError) throw new Error("MFA verification failed.");
+      const { data: auth } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", auth.user?.id ?? "").maybeSingle();
+      if (auth.user) setUser({ id: auth.user.id, fullName: profile?.full_name ?? "Administrator" });
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "MFA verification failed."); }
+    finally { setBusy(false); }
   }
 
-  if (isAdminAuthenticated) {
-    return (
-      <AdminDashboard
-        user={{
-          userId: "eval-om-thakkar",
-          role: "admin",
-          profile: { full_name: "Om Thakkar (Transport Admin)" },
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 selection:bg-primary selection:text-primary-foreground">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-2xl bg-primary/10 border border-primary/20 px-3.5 py-1.5 text-xs font-bold text-primary">
-            <ShieldCheck className="h-4 w-4" /> GSFC UNIVERSITY TRANSPORT ADMIN HQ
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Restricted Admin Portal
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Authorized transport admin personnel only. All login attempts are logged.
-          </p>
-        </div>
-
-        {/* Locked Warning */}
-        {isLocked && (
-          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-            <div>
-              <div className="font-bold text-sm text-red-700 dark:text-red-400">Portal Locked</div>
-              <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5">
-                {MAX_ATTEMPTS} failed login attempts detected. For access, contact Transport Admin directly.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Login Card */}
-        <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-2xl space-y-5">
-          <div className="flex items-center gap-3 border-b border-border/60 pb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Lock className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="font-bold text-sm">Transport Admin Login</div>
-              <div className="text-xs text-muted-foreground">Om Thakkar (Roll 24BT04171) · GSFCU</div>
-            </div>
-          </div>
-
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            {/* Email Field */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                Admin Email ID
-              </label>
-              <div className="relative">
-                <ShieldCheck className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="omthakkar@gsfcuniversity.ac.in"
-                  className="w-full rounded-2xl border border-input bg-background pl-10 pr-4 py-2.5 text-sm font-mono outline-none focus:border-primary transition"
-                  required
-                  disabled={isLocked}
-                  autoComplete="username"
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                Admin Security Password
-              </label>
-              <div className="relative">
-                <Key className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Enter admin password…"
-                  className="w-full rounded-2xl border border-input bg-background pl-10 pr-12 py-2.5 text-sm font-mono outline-none focus:border-primary transition"
-                  required
-                  disabled={isLocked}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3.5 top-3 text-muted-foreground hover:text-foreground transition"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {attempts > 0 && !isLocked && (
-                <p className="mt-1 text-[10px] text-red-500 font-semibold">
-                  ⚠️ {attempts}/{MAX_ATTEMPTS} failed attempts — portal will lock after {MAX_ATTEMPTS}.
-                </p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || isLocked}
-              className="w-full rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Verifying Credentials…" : isLocked ? "🔒 Portal Locked" : "Authorize & Enter Admin HQ"}
-              {!loading && !isLocked && <ArrowRight className="h-4 w-4" />}
-            </button>
-
-            {/* Quick Option to Open Admin Panel Directly */}
-            <div className="pt-2 border-t border-border/60">
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.setItem("gsfc_admin_auth_session", JSON.stringify({ valid: true, ts: Date.now(), email: "omthakkar@gsfcuniversity.ac.in" }));
-                  setIsAdminAuthenticated(true);
-                  toast.success("🚀 Opening Admin Panel — Welcome Om Thakkar!");
-                }}
-                className="w-full rounded-2xl border border-emerald-500/50 bg-emerald-500/10 py-3 text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
-              >
-                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                ⚡ 1-Click Open Admin Panel (Verified Admin Access)
-              </button>
-              <p className="text-[10px] text-center text-muted-foreground mt-1.5 font-mono">
-                Directly opens Transport Admin Panel & Master Route Buses
-              </p>
-            </div>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-[11px] text-muted-foreground space-y-1">
-          <div className="flex items-center justify-center gap-1 font-semibold">
-            <Award className="h-3.5 w-3.5 text-primary" /> GSFCU Practical Exam 2026 · Roll 24BT04171
-          </div>
-          <div>
-            Return to{" "}
-            <a href="/" className="text-primary font-bold hover:underline">Home Landing Page</a>
-            {" "}or{" "}
-            <a href="/app" className="text-primary font-bold hover:underline">Student App Console</a>
-          </div>
-          <div className="text-[10px] text-muted-foreground/50 font-mono mt-1">
-            🔐 All access attempts logged · Unauthorized access prohibited
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  if (user) return <AdminDashboard user={{ userId: user.id, role: "admin", profile: { full_name: user.fullName } }} />;
+  return <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+    <h1 className="text-2xl font-bold">Administrator sign in</h1>
+    <p className="my-3 text-sm text-muted-foreground">Use your invited university account and an authenticator app.</p>
+    {totpUri && <section className="my-4 rounded border p-4"><p className="mb-3 text-sm">Scan this QR code in your authenticator app, then enter its six-digit code.</p><QRCodeSVG value={totpUri} /><p className="mt-3 break-all text-xs">{totpUri}</p></section>}
+    {error && <p role="alert" className="my-3 text-sm text-destructive">{error}</p>}
+    {!factorId ? <form className="space-y-4" onSubmit={submit}>
+      <label className="block">Email<input className="mt-1 w-full rounded border p-3" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+      <label className="block">Password<input className="mt-1 w-full rounded border p-3" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+      <button className="w-full rounded bg-primary p-3 text-primary-foreground" disabled={busy}>Continue</button>
+    </form> : <form className="space-y-4" onSubmit={verifyMfa}>
+      <label className="block">Authenticator code<input className="mt-1 w-full rounded border p-3" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} required value={otp} onChange={(e) => setOtp(e.target.value)} /></label>
+      <button className="w-full rounded bg-primary p-3 text-primary-foreground" disabled={busy}>Verify and continue</button>
+    </form>}
+  </main>;
 }

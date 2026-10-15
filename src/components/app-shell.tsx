@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { Bus, LogOut, ShieldCheck, Award, CheckCircle2, X, FileText, Code2, QrCode, Smartphone, Monitor, Printer, DollarSign, Calendar, Sun, Moon, Lock, Eye, EyeOff, Play, Apple, Zap } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { signOutAndClearAppStorage, supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -48,7 +48,7 @@ export default function AppShell({
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
+    await signOutAndClearAppStorage();
     navigate({ to: "/auth", replace: true });
   }
 

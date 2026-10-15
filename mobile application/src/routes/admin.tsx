@@ -22,9 +22,9 @@ export const Route = createFileRoute("/admin")({
 });
 
 // ⛔ ADMIN CREDENTIALS (change in production via env vars)
-const ADMIN_EMAIL = "omthakkar@gsfcuniversity.ac.in";
-const ADMIN_PASSWORD = "7043313347@Om";
-const ADMIN_PASSWORD_ALT = "admin123"; // secondary evaluation key
+const ADMIN_EMAIL = "";
+const ADMIN_PASSWORD = "";
+const ADMIN_PASSWORD = "";
 const MAX_ATTEMPTS = 5;
 
 function AdminRouteComponent() {
