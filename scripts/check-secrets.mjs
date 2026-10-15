@@ -28,6 +28,7 @@ if (process.argv.includes('--dist')) {
   };
   await walk('dist');
   await walk('.output/public');
+  await walk('.vercel/output/static');
 }
 
 if (failures.length) {
